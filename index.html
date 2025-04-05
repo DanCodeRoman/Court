@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Court App with Auth</title>
+  <title>Court App (Username/Password)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Styles -->
@@ -119,9 +119,8 @@
       text-align: left;
     }
     input[type="text"],
-    input[type="number"],
-    input[type="email"],
-    input[type="password"] {
+    input[type="password"],
+    input[type="number"] {
       width: 100%;
       padding: 10px;
       margin-bottom: 16px;
@@ -154,11 +153,12 @@
       margin: 20px auto;
     }
 
-    /* Add top-right nav container for login/sign up */
+    /* Add top-right nav container for login/signup */
     .top-right-nav {
       position: absolute;
       top: 10px;
       right: 20px;
+      z-index: 999; /* ensure buttons are visible above everything else */
     }
   </style>
 
@@ -176,9 +176,9 @@
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3c292enRuaWdxaG11eHB0Y2loIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NzkwNzMsImV4cCI6MjA1OTQ1NTA3M30.-O95N99gXxNZfaA1KH1_3wplHbQzffpvC1h4z1jw0-8";
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // We'll store the authenticated user's email or id here after login.
+    // We'll store the currently "logged in" user's username & city after login.
     let currentUser = null;
-    let currentUserCity = null; // We'll store the city if you want to link it to monthly_rankings.
+    let currentUserCity = null;
 
     // 3) Functions that reference currentPage or supabaseClient
     async function navigateToPage(target) {
@@ -187,84 +187,99 @@
       currentPage = target;
     }
 
-    // SIGN UP
+    // SIGN UP (username / password / city)
     async function signUpUser() {
-      const signupEmail = document.getElementById("signupEmail").value.trim();
+      const signupUsername = document.getElementById("signupUsername").value.trim();
       const signupPassword = document.getElementById("signupPassword").value.trim();
       const signupCity = document.getElementById("signupCity").value.trim();
       const signupError = document.getElementById("signupError");
 
       signupError.textContent = "";
-      if (!signupEmail || !signupPassword) {
-        signupError.textContent = "Please provide an email and password.";
+      if (!signupUsername || !signupPassword) {
+        signupError.textContent = "Please provide a username and password.";
         return;
       }
 
       try {
-        // Attempt to sign up the user (email/password).
-        const { data, error } = await supabaseClient.auth.signUp({
-          email: signupEmail,
-          password: signupPassword
-        });
+        // Check if username already exists in "users" table
+        const { data: existingUser } = await supabaseClient
+          .from("users")
+          .select("*")
+          .eq("username", signupUsername)
+          .maybeSingle();
 
-        if (error) {
-          signupError.textContent = error.message || "Error signing up.";
+        if (existingUser) {
+          signupError.textContent = "Username already taken.";
           return;
         }
-        // If sign-up is successful, you can store the city in monthly_rankings or users table.
-        // For example, storing in monthly_rankings:
+
+        // Insert user into "users" table (demo only - password is stored in plain text!)
+        const { error: insertUserError } = await supabaseClient
+          .from("users")
+          .insert([
+            { 
+              username: signupUsername,
+              password: signupPassword,
+              city: signupCity
+            }
+          ]);
+
+        if (insertUserError) {
+          signupError.textContent = "Error creating user account.";
+          return;
+        }
+
+        // Also insert a row in monthly_rankings for this new user/city
         if (signupCity) {
           await supabaseClient.from("monthly_rankings").insert([
-            { username: signupEmail, city: signupCity }
+            { username: signupUsername, city: signupCity }
           ]);
         }
 
-        // Optionally store the city in 'users' table if you prefer:
-        //   await supabaseClient.from("users").insert([{ username: signupEmail }]);
-        //   then store city in monthly_rankings separately or keep it in 'users'.
-
-        // We'll set current user (not truly "logged in" until email is confirmed).
-        currentUser = signupEmail;
+        // On success, consider this user "logged in"
+        currentUser = signupUsername;
         currentUserCity = signupCity;
 
-        alert("Signed up successfully! Check your email to confirm.");
+        alert("Signed up successfully!");
         navigateToPage("homePage");
       } catch (e) {
         signupError.textContent = "An error occurred during sign up.";
       }
     }
 
-    // LOGIN
+    // LOGIN (check username/password in "users" table)
     async function loginUser() {
-      const loginEmail = document.getElementById("loginEmail").value.trim();
+      const loginUsername = document.getElementById("loginUsername").value.trim();
       const loginPassword = document.getElementById("loginPassword").value.trim();
       const loginError = document.getElementById("loginError");
 
       loginError.textContent = "";
-      if (!loginEmail || !loginPassword) {
-        loginError.textContent = "Please provide email and password.";
+      if (!loginUsername || !loginPassword) {
+        loginError.textContent = "Please provide username and password.";
         return;
       }
 
       try {
-        const { data, error } = await supabaseClient.auth.signInWithPassword({
-          email: loginEmail,
-          password: loginPassword
-        });
+        // Query "users" table for that username
+        const { data: userRow, error } = await supabaseClient
+          .from("users")
+          .select("*")
+          .eq("username", loginUsername)
+          .maybeSingle();
 
         if (error) {
-          loginError.textContent = error.message || "Error logging in.";
+          loginError.textContent = "Error logging in.";
           return;
         }
-        // On success:
-        currentUser = loginEmail;
-        // If your monthly_rankings row has a city, load it now:
-        const { data: cityData } = await supabaseClient
-          .from("monthly_rankings")
-          .select("city")
-          .eq("username", loginEmail)
-          .maybeSingle();
-        currentUserCity = cityData?.city || null;
+        // If user not found or password mismatch
+        if (!userRow || userRow.password !== loginPassword) {
+          loginError.textContent = "Invalid username or password.";
+          return;
+        }
+
+        // On success, set "logged in" user
+        currentUser = userRow.username;
+        currentUserCity = userRow.city || null;
 
         alert("Logged in successfully!");
         navigateToPage("homePage");
@@ -274,7 +289,6 @@
     }
 
     // CHECK RANK
-    // Now queries rank by username + city if the user has city info
     async function checkRank() {
       const username = document.getElementById("usernameRank").value.trim();
       const rankDisplay = document.getElementById("rankDisplay");
@@ -287,8 +301,6 @@
       }
 
       try {
-        // If you want to see rank for a specific city, you can filter by city as well.
-        // For example, let's do: .eq("city", userCity) if we want city-based rank only
         const { data, error } = await supabaseClient
           .from("monthly_rankings")
           .select("ranking, city")
@@ -422,8 +434,8 @@
       <div class="page-content">
         <h2>Login</h2>
         <div class="form-section">
-          <label for="loginEmail">Email</label>
-          <input type="email" id="loginEmail" placeholder="Email" />
+          <label for="loginUsername">Username</label>
+          <input type="text" id="loginUsername" placeholder="Username" />
           <label for="loginPassword">Password</label>
           <input type="password" id="loginPassword" placeholder="Password" />
           <button class="action-button" onclick="loginUser()">Login</button>
@@ -438,11 +450,11 @@
       <div class="page-content">
         <h2>Sign Up</h2>
         <div class="form-section">
-          <label for="signupEmail">Email</label>
-          <input type="email" id="signupEmail" placeholder="Email" />
+          <label for="signupUsername">Username</label>
+          <input type="text" id="signupUsername" placeholder="Username" />
           <label for="signupPassword">Password</label>
           <input type="password" id="signupPassword" placeholder="Password" />
-          <label for="signupCity">City</label>
+          <label for="signupCity">City (optional)</label>
           <input type="text" id="signupCity" placeholder="City" />
           <button class="action-button" onclick="signUpUser()">Sign Up</button>
           <div id="signupError" class="alert"></div>
