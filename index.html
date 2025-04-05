@@ -302,8 +302,8 @@
             <h2>Welcome to Court</h2>
             <p style="text-align: center; margin-bottom: 30px;">Organize your next pickup game.</p>
             <div class="button-group">
-                <button id="nav-create-game">Create Game</button>
-                <button id="nav-enter-game">Enter Game Code</button>
+                <button id="nav-create-game" disabled>Create Game</button> <!-- Start disabled -->
+                <button id="nav-enter-game" disabled>Enter Game Code</button> <!-- Start disabled -->
                 <button id="nav-check-rank">Check Rank</button>
                 <button id="nav-leaderboard">Leaderboard</button>
             </div>
@@ -412,7 +412,6 @@
             </form>
             <div id="rank-display">
                  <!-- Rank will be displayed here -->
-                 <!-- e.g., <p>Username: Player1</p> <p>Rank Score: 1050</p> <p>City: Anytown</p> <p>State: CA</p> -->
             </div>
              <div class="button-group">
                 <button type="button" class="back-button" data-target="home-page">Back to Home</button>
@@ -458,7 +457,6 @@
             </form>
             <div id="game-code-display">
                 <!-- Generated code appears here -->
-                <!-- e.g., Game Code: X7Y9Z -->
             </div>
              <div class="button-group">
                 <button type="button" class="back-button" data-target="home-page">Back to Home</button>
@@ -469,8 +467,8 @@
         <section id="leaderboard-page" class="page">
             <h2>Leaderboard</h2>
             <div class="leaderboard-controls">
-                 <button id="leaderboard-city-btn">My City</button>
-                 <button id="leaderboard-state-btn">My State</button>
+                 <button id="leaderboard-city-btn" disabled>My City</button> <!-- Start disabled -->
+                 <button id="leaderboard-state-btn" disabled>My State</button> <!-- Start disabled -->
                  <button id="leaderboard-country-btn" class="active">Country</button>
              </div>
             <div id="leaderboard-loading" style="text-align: center; margin: 20px;">Loading...</div>
@@ -479,7 +477,6 @@
                 <h3 id="leaderboard-title">Country Leaderboard</h3>
                 <ul id="leaderboard-ul">
                     <!-- Leaderboard items will be populated here -->
-                    <!-- e.g., <li><span class="rank">1.</span> PlayerOne <span class="location">(Anytown, CA)</span> <span class="score">1200</span></li> -->
                 </ul>
             </div>
              <div class="button-group">
@@ -491,24 +488,33 @@
 
     <script>
         // --- Supabase Setup ---
-        // Replace with your actual Supabase URL and Anon Key
-        const SUPABASE_URL = 'https://noxophuyplfgcmjqinrb.supabase.co';
+        // IMPORTANT! Verify SUPABASE_URL is correct for your project.
+        // Found in your Supabase project settings: Project Settings -> API -> Project URL
+        const SUPABASE_URL = 'https://noxophuyplfgcmjqinrb.supabase.co'; // <-- VERIFY THIS URL!
+
+        // Provided Anon Public Key
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5veG9waHV5cGxmZ2NtanFpbnJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4ODMzMDIsImV4cCI6MjA1OTQ1OTMwMn0.UlX8E64FWEuJz1zJ1m9U9WDuyCRfHhV-AscEGzheTSU';
 
-        // Basic check if placeholders are filled
-        if (SUPABASE_URL === 'YOUR_SUPABASE_URL_HERE' || SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY_HERE') {
-             console.warn('Supabase URL and Anon Key are placeholders. Please replace them in the script.');
-             // Optionally disable functionality or show a message
-             // alert('App backend is not configured. Please set Supabase URL and Key.');
+        // Check if values look like placeholders (basic check)
+        if (!SUPABASE_URL || SUPABASE_URL.includes('<your-project-ref>') || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.length < 50) {
+             console.warn('Supabase URL or Anon Key might be incorrect. Please verify them in the script.');
+             alert('App backend is not configured correctly. Please check Supabase URL and Key in the code.');
         }
 
-        let supabase;
+        // Initialize Supabase Client
+        let supabaseClient; // Use this variable for all Supabase interactions
         try {
-             supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+             // Ensure the global 'supabase' object exists (from the CDN script)
+             if (typeof supabase === 'undefined' || !supabase.createClient) {
+                throw new Error("Supabase library not loaded correctly. Check the script tag.");
+             }
+             const { createClient } = supabase; // Destructure from global supabase
+             supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
              console.log('Supabase client initialized.');
         } catch (error) {
              console.error('Error initializing Supabase client:', error);
-             // Handle initialization error (e.g., show error message to user)
+             supabaseClient = null; // Ensure client is null on failure
+             alert(`Failed to connect to the backend: ${error.message}. Please ensure the Supabase URL and Key are correct and the service is running.`);
         }
 
 
@@ -562,16 +568,17 @@
             if (targetPage) {
                 targetPage.classList.add('active');
                 // Scroll to top of app container when changing page
-                appDiv.scrollTop = 0;
+                if (appDiv) appDiv.scrollTop = 0; // Added check for appDiv
                  // If navigating to leaderboard, trigger fetch
-                 if (pageId === 'leaderboard-page') {
+                 if (pageId === 'leaderboard-page' && supabaseClient) { // Check if client is initialized
                      fetchLeaderboard('country'); // Default to country
                      setActiveLeaderboardButton(leaderboardCountryBtn);
                  }
             } else {
                 console.error(`Page with ID ${pageId} not found.`);
                 // Optionally show the home page as a fallback
-                document.getElementById('home-page').classList.add('active');
+                 const homePage = document.getElementById('home-page');
+                 if (homePage) homePage.classList.add('active');
             }
         }
 
@@ -604,7 +611,7 @@
 
          function setActiveLeaderboardButton(activeButton) {
              [leaderboardCityBtn, leaderboardStateBtn, leaderboardCountryBtn].forEach(btn => {
-                 btn.classList.remove('active');
+                 if(btn) btn.classList.remove('active'); // Added null check
              });
              if (activeButton) {
                  activeButton.classList.add('active');
@@ -613,10 +620,10 @@
 
         // --- Authentication & Profile Logic ---
         async function checkUserSession() {
-            if (!supabase) return; // Don't proceed if supabase failed to initialize
+            if (!supabaseClient) return; // Use the initialized client
 
             try {
-                 const { data: { session }, error } = await supabase.auth.getSession();
+                 const { data: { session }, error } = await supabaseClient.auth.getSession(); // Use client
                  if (error) throw error;
 
                  if (session && session.user) {
@@ -637,15 +644,15 @@
         }
 
         async function fetchUserProfile(userId) {
-            if (!supabase || !userId) return;
+            if (!supabaseClient || !userId) return; // Use client
             try {
-                const { data, error, status } = await supabase
+                const { data, error, status } = await supabaseClient // Use client
                     .from('profiles')
                     .select(`username, city, state, rank_score`)
                     .eq('id', userId)
                     .single(); // We expect only one profile per user
 
-                if (error && status !== 406) { // 406 means no rows found, which might happen briefly after signup
+                if (error && status !== 406) { // 406 means no rows found
                     throw error;
                 }
 
@@ -654,7 +661,7 @@
                     console.log('User profile fetched:', userProfile);
                     updateUserDisplay(); // Update header display once profile is fetched
                 } else {
-                     userProfile = null; // Profile might not exist yet if handle_new_user trigger is slow or signup isn't complete
+                     userProfile = null;
                      console.log('User profile not found for ID:', userId);
                 }
             } catch (error) {
@@ -665,40 +672,46 @@
 
 
         function updateUIForLoggedInUser() {
-            loginNavBtn.style.display = 'none';
-            signupNavBtn.style.display = 'none';
-            logoutBtn.style.display = 'inline-block';
-            userDisplay.style.display = 'inline-block';
+            if(loginNavBtn) loginNavBtn.style.display = 'none';
+            if(signupNavBtn) signupNavBtn.style.display = 'none';
+            if(logoutBtn) logoutBtn.style.display = 'inline-block';
+            if(userDisplay) userDisplay.style.display = 'inline-block';
             updateUserDisplay(); // Call this to potentially show email first, then username
              // Enable features requiring login
-             document.getElementById('nav-create-game').disabled = false;
-             document.getElementById('nav-enter-game').disabled = false;
+             const createBtn = document.getElementById('nav-create-game');
+             const enterBtn = document.getElementById('nav-enter-game');
+             if (createBtn) createBtn.disabled = false;
+             if (enterBtn) enterBtn.disabled = false;
              // Adjust leaderboard buttons if profile loaded
-             leaderboardCityBtn.disabled = !userProfile;
-             leaderboardStateBtn.disabled = !userProfile;
+             if (leaderboardCityBtn) leaderboardCityBtn.disabled = !userProfile;
+             if (leaderboardStateBtn) leaderboardStateBtn.disabled = !userProfile;
         }
 
          function updateUserDisplay() {
-             if (currentUser) {
-                 userDisplay.textContent = userProfile ? `Hi, ${userProfile.username}` : `Hi, ${currentUser.email}`;
-             } else {
-                 userDisplay.textContent = '';
+             if (userDisplay) { // Check if element exists
+                 if (currentUser) {
+                     userDisplay.textContent = userProfile ? `Hi, ${userProfile.username}` : `Hi, ${currentUser.email}`;
+                 } else {
+                     userDisplay.textContent = '';
+                 }
              }
          }
 
         function updateUIForLoggedOutUser() {
-            loginNavBtn.style.display = 'inline-block';
-            signupNavBtn.style.display = 'inline-block';
-            logoutBtn.style.display = 'none';
-            userDisplay.style.display = 'none';
-            userDisplay.textContent = '';
+             if(loginNavBtn) loginNavBtn.style.display = 'inline-block';
+             if(signupNavBtn) signupNavBtn.style.display = 'inline-block';
+             if(logoutBtn) logoutBtn.style.display = 'none';
+             if(userDisplay) userDisplay.style.display = 'none';
+             if(userDisplay) userDisplay.textContent = '';
             currentUser = null;
             userProfile = null;
              // Disable features requiring login
-             document.getElementById('nav-create-game').disabled = true;
-             document.getElementById('nav-enter-game').disabled = true;
-              leaderboardCityBtn.disabled = true;
-              leaderboardStateBtn.disabled = true;
+             const createBtn = document.getElementById('nav-create-game');
+             const enterBtn = document.getElementById('nav-enter-game');
+             if (createBtn) createBtn.disabled = true;
+             if (enterBtn) enterBtn.disabled = true;
+             if (leaderboardCityBtn) leaderboardCityBtn.disabled = true;
+             if (leaderboardStateBtn) leaderboardStateBtn.disabled = true;
              // Redirect to home if on a protected page
              const activePage = document.querySelector('.page.active');
              const protectedPages = ['create-game-page', 'enter-game-page']; // Add others if needed
@@ -708,35 +721,34 @@
         }
 
         async function handleLogout() {
-            if (!supabase) return;
+            if (!supabaseClient) return; // Use client
             clearMessages(loginErrorDiv, signupErrorDiv, rankErrorDiv, enterGameErrorDiv, createGameErrorDiv, leaderboardErrorDiv);
             try {
-                const { error } = await supabase.auth.signOut();
+                const { error } = await supabaseClient.auth.signOut(); // Use client
                 if (error) throw error;
                 updateUIForLoggedOutUser();
                 showPage('home-page'); // Go to home after logout
                 console.log('User logged out.');
             } catch (error) {
                 console.error('Error logging out:', error.message);
-                // Maybe display a generic error message
-                 displayError(loginErrorDiv, "Logout failed. Please try again."); // Show error on login page for visibility
+                displayError(loginErrorDiv, "Logout failed. Please try again.");
             }
         }
 
 
         // --- Event Listeners ---
 
-        // Navigation Buttons
-        document.getElementById('nav-create-game').addEventListener('click', () => showPage('create-game-page'));
-        document.getElementById('nav-enter-game').addEventListener('click', () => showPage('enter-game-page'));
-        document.getElementById('nav-check-rank').addEventListener('click', () => showPage('check-rank-page'));
-        document.getElementById('nav-leaderboard').addEventListener('click', () => showPage('leaderboard-page'));
-        loginNavBtn.addEventListener('click', () => showPage('login-page'));
-        signupNavBtn.addEventListener('click', () => showPage('signup-page'));
-        logoutBtn.addEventListener('click', handleLogout);
+        // Navigation Buttons (adding null checks for robustness)
+        document.getElementById('nav-create-game')?.addEventListener('click', () => showPage('create-game-page'));
+        document.getElementById('nav-enter-game')?.addEventListener('click', () => showPage('enter-game-page'));
+        document.getElementById('nav-check-rank')?.addEventListener('click', () => showPage('check-rank-page'));
+        document.getElementById('nav-leaderboard')?.addEventListener('click', () => showPage('leaderboard-page'));
+        loginNavBtn?.addEventListener('click', () => showPage('login-page'));
+        signupNavBtn?.addEventListener('click', () => showPage('signup-page'));
+        logoutBtn?.addEventListener('click', handleLogout);
 
-        document.getElementById('goto-signup').addEventListener('click', () => showPage('signup-page'));
-        document.getElementById('goto-login').addEventListener('click', () => showPage('login-page'));
+        document.getElementById('goto-signup')?.addEventListener('click', () => showPage('signup-page'));
+        document.getElementById('goto-login')?.addEventListener('click', () => showPage('login-page'));
 
         // Back Buttons
         document.querySelectorAll('.back-button').forEach(button => {
@@ -752,38 +764,40 @@
 
 
          // Leaderboard View Buttons
-         leaderboardCityBtn.addEventListener('click', () => {
-             if (userProfile && userProfile.city) {
+         leaderboardCityBtn?.addEventListener('click', () => {
+             if (userProfile && userProfile.city && supabaseClient) { // Use client
                  fetchLeaderboard('city', userProfile.city, userProfile.state);
                  setActiveLeaderboardButton(leaderboardCityBtn);
              } else {
-                  displayError(leaderboardErrorDiv, 'Your location is needed to show city leaderboard.');
+                  displayError(leaderboardErrorDiv, 'Your location is needed to show city leaderboard. Ensure you are logged in.');
              }
          });
-         leaderboardStateBtn.addEventListener('click', () => {
-              if (userProfile && userProfile.state) {
+         leaderboardStateBtn?.addEventListener('click', () => {
+              if (userProfile && userProfile.state && supabaseClient) { // Use client
                  fetchLeaderboard('state', null, userProfile.state);
                  setActiveLeaderboardButton(leaderboardStateBtn);
               } else {
-                  displayError(leaderboardErrorDiv, 'Your location is needed to show state leaderboard.');
+                  displayError(leaderboardErrorDiv, 'Your location is needed to show state leaderboard. Ensure you are logged in.');
               }
          });
-         leaderboardCountryBtn.addEventListener('click', () => {
-             fetchLeaderboard('country');
-              setActiveLeaderboardButton(leaderboardCountryBtn);
+         leaderboardCountryBtn?.addEventListener('click', () => {
+             if (supabaseClient) { // Use client
+                fetchLeaderboard('country');
+                setActiveLeaderboardButton(leaderboardCountryBtn);
+             }
          });
 
         // Login Form Submission
-        loginForm.addEventListener('submit', async (e) => {
+        loginForm?.addEventListener('submit', async (e) => {
              e.preventDefault();
-             if (!supabase) return displayError(loginErrorDiv, 'Backend connection error.');
+             if (!supabaseClient) return displayError(loginErrorDiv, 'Backend connection error.'); // Use client
              clearMessages(loginErrorDiv, signupErrorDiv); // Clear errors
 
              const email = loginForm.username.value;
              const password = loginForm.password.value;
 
              try {
-                 const { data, error } = await supabase.auth.signInWithPassword({
+                 const { data, error } = await supabaseClient.auth.signInWithPassword({ // Use client
                      email: email,
                      password: password,
                  });
@@ -804,9 +818,9 @@
         });
 
         // Sign Up Form Submission
-        signupForm.addEventListener('submit', async (e) => {
+        signupForm?.addEventListener('submit', async (e) => {
             e.preventDefault();
-             if (!supabase) return displayError(signupErrorDiv, 'Backend connection error.');
+             if (!supabaseClient) return displayError(signupErrorDiv, 'Backend connection error.'); // Use client
              clearMessages(signupErrorDiv, signupSuccessDiv, loginErrorDiv); // Clear messages
 
             const username = signupForm.username.value.trim();
@@ -828,7 +842,7 @@
 
             try {
                  // 1. Sign up the user with Supabase Auth
-                 const { data: authData, error: authError } = await supabase.auth.signUp({
+                 const { data: authData, error: authError } = await supabaseClient.auth.signUp({ // Use client
                      email: email,
                      password: password,
                  });
@@ -838,39 +852,30 @@
 
                   console.log('Auth signup successful, user ID:', authData.user.id);
 
-                  // 2. The handle_new_user trigger should have created a basic profile row.
+                  // 2. The handle_new_user trigger should create a basic profile row.
                   // Now, update that profile row with the additional details.
-                  // Wait a tiny bit for the trigger potentially
-                  await new Promise(resolve => setTimeout(resolve, 500)); // Small delay
+                  await new Promise(resolve => setTimeout(resolve, 500)); // Small delay for trigger
 
-                 const { error: profileError } = await supabase
+                 const { error: profileError } = await supabaseClient // Use client
                      .from('profiles')
                      .update({
                          username: username,
                          city: city,
                          state: state,
-                         updated_at: new Date() // Explicitly set update time
+                         updated_at: new Date()
                      })
-                     .eq('id', authData.user.id); // Match the newly created user ID
+                     .eq('id', authData.user.id);
 
-                 // Check if the update failed (e.g., duplicate username handled by DB constraint)
                  if (profileError) {
-                     // Attempt to clean up the auth user if profile update fails (best effort)
-                     // This might require admin privileges depending on your RLS
-                     // console.warn('Profile update failed, attempting to clean up auth user...', profileError);
-                     // await supabase.auth.admin.deleteUser(authData.user.id); // Requires service_role key usually
                      throw new Error(`Profile update failed: ${profileError.message}. Username might be taken.`);
                  }
 
                  // Signup successful
                  displaySuccess(signupSuccessDiv, 'Signup successful! Please check your email to verify your account, then log in.');
                  signupForm.reset();
-                 // Optionally navigate to login page automatically
-                 // showPage('login-page');
 
              } catch (error) {
                  console.error('Sign up error:', error.message);
-                 // Differentiate between auth errors and profile errors
                  if (error.message.includes("User already registered")) {
                     displayError(signupErrorDiv, "An account with this email already exists.");
                  } else if (error.message.includes("duplicate key value violates unique constraint")) {
@@ -882,73 +887,68 @@
         });
 
         // Check Rank Form Submission
-        checkRankForm.addEventListener('submit', async (e) => {
+        checkRankForm?.addEventListener('submit', async (e) => {
              e.preventDefault();
-             if (!supabase) return displayError(rankErrorDiv, 'Backend connection error.');
+             if (!supabaseClient) return displayError(rankErrorDiv, 'Backend connection error.'); // Use client
              clearMessages(rankErrorDiv);
-             rankDisplayDiv.innerHTML = ''; // Clear previous results
+             if(rankDisplayDiv) rankDisplayDiv.innerHTML = ''; // Clear previous results
 
              const usernameToCheck = checkRankForm.rank_username.value.trim();
              if (!usernameToCheck) {
                  return displayError(rankErrorDiv, 'Please enter a username.');
              }
 
-             rankDisplayDiv.innerHTML = '<p>Checking...</p>';
+             if(rankDisplayDiv) rankDisplayDiv.innerHTML = '<p>Checking...</p>';
 
              try {
-                 // Placeholder: Query the 'profiles' table for the username
-                 const { data, error } = await supabase
+                 const { data, error } = await supabaseClient // Use client
                      .from('profiles')
                      .select('username, city, state, rank_score')
                      .eq('username', usernameToCheck)
-                     .single(); // Expecting one user or none
+                     .single();
 
                  if (error) {
-                     if (error.code === 'PGRST116') { // PostgREST code for "Searched for one row, but found 0"
+                     if (error.code === 'PGRST116') {
                          throw new Error(`Username '${usernameToCheck}' not found.`);
                      } else {
-                        throw error; // Other DB errors
+                        throw error;
                      }
                  }
 
-                 if (data) {
-                     // Display the rank information
+                 if (data && rankDisplayDiv) {
                      rankDisplayDiv.innerHTML = `
                          <p><strong>Username:</strong> ${data.username}</p>
                          <p><strong>Rank Score:</strong> ${data.rank_score}</p>
                          <p><strong>Location:</strong> ${data.city}, ${data.state}</p>
                      `;
-                 } else {
-                      // This case should be covered by the PGRST116 error, but good to have a fallback
+                 } else if (!data) {
                       throw new Error(`Username '${usernameToCheck}' not found.`);
                  }
              } catch (error) {
                  console.error('Check rank error:', error.message);
                  displayError(rankErrorDiv, `Error: ${error.message}`);
-                 rankDisplayDiv.innerHTML = ''; // Clear 'Checking...' message
+                 if (rankDisplayDiv) rankDisplayDiv.innerHTML = '';
              }
         });
 
         // Enter Game Form Submission
-        enterGameForm.addEventListener('submit', async (e) => {
+        enterGameForm?.addEventListener('submit', async (e) => {
              e.preventDefault();
-              if (!supabase) return displayError(enterGameErrorDiv, 'Backend connection error.');
+              if (!supabaseClient) return displayError(enterGameErrorDiv, 'Backend connection error.'); // Use client
               if (!currentUser) return displayError(enterGameErrorDiv, 'You must be logged in to enter a game.');
              clearMessages(enterGameErrorDiv, enterGameSuccessDiv);
 
-             const gameCode = enterGameForm.game_code.value.trim().toUpperCase(); // Standardize code format
+             const gameCode = enterGameForm.game_code.value.trim().toUpperCase();
              if (!gameCode) {
                  return displayError(enterGameErrorDiv, 'Please enter a game code.');
              }
 
              try {
-                 // Placeholder: Query the 'games' table to find the game
-                 // You'll likely want to check if the game exists and is 'pending' or 'active'
-                 const { data: gameData, error: gameError } = await supabase
+                 const { data: gameData, error: gameError } = await supabaseClient // Use client
                      .from('games')
                      .select('id, status, game_type')
                      .eq('game_code', gameCode)
-                     .in('status', ['pending', 'active']) // Only find joinable games
+                     .in('status', ['pending', 'active'])
                      .single();
 
                  if (gameError || !gameData) {
@@ -957,12 +957,11 @@
 
                  // --- Optional: Add logic to add user to game_participants table ---
                  /*
-                 const { error: participantError } = await supabase
+                 const { error: participantError } = await supabaseClient // Use client
                      .from('game_participants')
                      .insert({ game_id: gameData.id, user_id: currentUser.id });
 
                  if (participantError) {
-                     // Handle potential errors like already being in the game (duplicate key)
                      if (participantError.code === '23505') { // unique_violation
                          displaySuccess(enterGameSuccessDiv, `You are already part of game ${gameCode}.`);
                      } else {
@@ -974,8 +973,7 @@
                  */
                  // --- End Optional Participant Logic ---
 
-                  // For now, just confirm the code is valid
-                 displaySuccess(enterGameSuccessDiv, `Game code ${gameCode} (${gameData.game_type}) is valid. Joining functionality to be added.`);
+                 displaySuccess(enterGameSuccessDiv, `Game code ${gameCode} (${gameData.game_type}) is valid. Joining functionality placeholder.`);
                  enterGameForm.reset();
 
 
@@ -986,48 +984,39 @@
         });
 
         // Create Game Form Submission
-        createGameForm.addEventListener('submit', async (e) => {
+        createGameForm?.addEventListener('submit', async (e) => {
              e.preventDefault();
-             if (!supabase) return displayError(createGameErrorDiv, 'Backend connection error.');
+             if (!supabaseClient) return displayError(createGameErrorDiv, 'Backend connection error.'); // Use client
              if (!currentUser || !userProfile) return displayError(createGameErrorDiv, 'You must be logged in and have a complete profile to create a game.');
              clearMessages(createGameErrorDiv, createGameSuccessDiv);
-             gameCodeDisplayDiv.textContent = ''; // Clear previous code
+             if(gameCodeDisplayDiv) gameCodeDisplayDiv.textContent = ''; // Clear previous code
 
              const selectedGameType = createGameForm.querySelector('input[name="game_type"]:checked');
              if (!selectedGameType) {
                  return displayError(createGameErrorDiv, 'Please select a game type.');
              }
              const gameType = selectedGameType.value;
-
-             // Generate a unique game code (simple client-side version)
-             // IMPORTANT: For production, generate this server-side (e.g., Supabase Edge Function)
-             // to guarantee uniqueness and security.
-             const newGameCode = generateGameCode(5);
+             const newGameCode = generateGameCode(5); // Use client-side generation for now
 
              try {
-                  // Ensure user profile has location data
                   if (!userProfile.city || !userProfile.state) {
-                    throw new Error("Your profile is missing location data (city/state). Please update it.");
+                    throw new Error("Your profile is missing location data (city/state).");
                   }
 
-                 // Placeholder: Insert the new game into the 'games' table
-                 const { data, error } = await supabase
+                 const { data, error } = await supabaseClient // Use client
                      .from('games')
                      .insert({
                          game_code: newGameCode,
                          game_type: gameType,
                          creator_id: currentUser.id,
-                         city: userProfile.city, // Use creator's city/state for game location
+                         city: userProfile.city,
                          state: userProfile.state
-                         // Status defaults to 'pending' via table definition
                      })
-                     .select() // Return the created record
-                     .single(); // Expecting one record back
+                     .select()
+                     .single();
 
                  if (error) {
-                     // Handle potential errors (e.g., duplicate game_code if client-gen clashes - unlikely with UUID but possible with short codes)
                       if (error.message.includes('duplicate key value violates unique constraint "games_game_code_key"')) {
-                          // Very unlikely with random generation, but handle it
                           throw new Error("Failed to generate a unique game code. Please try again.");
                       } else {
                           throw error;
@@ -1035,10 +1024,9 @@
                  }
 
                  if (data) {
-                    // Display the generated code
-                    gameCodeDisplayDiv.textContent = `Game Created! Code: ${data.game_code}`;
+                    if(gameCodeDisplayDiv) gameCodeDisplayDiv.textContent = `Game Created! Code: ${data.game_code}`;
                     displaySuccess(createGameSuccessDiv, `Game created successfully.`);
-                    createGameForm.reset(); // Reset the form
+                    createGameForm.reset();
                  } else {
                     throw new Error("Game creation failed. No data returned.");
                  }
@@ -1052,19 +1040,19 @@
 
         // --- Leaderboard Fetching ---
          async function fetchLeaderboard(scope = 'country', city = null, state = null) {
-             if (!supabase) return displayError(leaderboardErrorDiv, 'Backend connection error.');
+             if (!supabaseClient) return displayError(leaderboardErrorDiv, 'Backend connection error.'); // Use client
 
              clearMessages(leaderboardErrorDiv);
-             leaderboardLoadingDiv.style.display = 'block';
-             leaderboardUl.innerHTML = ''; // Clear previous list
-             leaderboardDisplayDiv.style.display = 'none'; // Hide list while loading
+             if(leaderboardLoadingDiv) leaderboardLoadingDiv.style.display = 'block';
+             if(leaderboardUl) leaderboardUl.innerHTML = '';
+             if(leaderboardDisplayDiv) leaderboardDisplayDiv.style.display = 'none';
 
              try {
-                 let query = supabase
+                 let query = supabaseClient // Use client
                      .from('profiles')
                      .select('username, city, state, rank_score')
-                     .order('rank_score', { ascending: false }) // Highest rank first
-                     .limit(50); // Limit results for performance
+                     .order('rank_score', { ascending: false })
+                     .limit(50);
 
                  let title = 'Leaderboard';
 
@@ -1075,17 +1063,17 @@
                      query = query.eq('state', state);
                      title = `Leaderboard - ${state}`;
                  } else {
-                     scope = 'country'; // Default or fallback
+                     scope = 'country';
                      title = `Leaderboard - Country`;
                  }
 
-                 leaderboardTitle.textContent = title;
+                 if(leaderboardTitle) leaderboardTitle.textContent = title;
 
                  const { data, error } = await query;
 
                  if (error) throw error;
 
-                 if (data && data.length > 0) {
+                 if (data && data.length > 0 && leaderboardUl) {
                      leaderboardUl.innerHTML = data.map((profile, index) => `
                          <li>
                              <span class="rank">${index + 1}.</span>
@@ -1094,17 +1082,17 @@
                              <span class="score">${profile.rank_score} pts</span>
                          </li>
                      `).join('');
-                     leaderboardDisplayDiv.style.display = 'block';
-                 } else {
+                     if(leaderboardDisplayDiv) leaderboardDisplayDiv.style.display = 'block';
+                 } else if (leaderboardUl) {
                      leaderboardUl.innerHTML = '<li>No players found for this scope.</li>';
-                      leaderboardDisplayDiv.style.display = 'block';
+                      if(leaderboardDisplayDiv) leaderboardDisplayDiv.style.display = 'block';
                  }
 
              } catch (error) {
                  console.error('Error fetching leaderboard:', error.message);
                  displayError(leaderboardErrorDiv, `Failed to load leaderboard: ${error.message}`);
              } finally {
-                 leaderboardLoadingDiv.style.display = 'none';
+                 if(leaderboardLoadingDiv) leaderboardLoadingDiv.style.display = 'none';
              }
          }
 
@@ -1112,33 +1100,42 @@
         // --- Initial Load ---
          document.addEventListener('DOMContentLoaded', () => {
              console.log('DOM fully loaded.');
-             showPage('home-page'); // Start on the home page
-             checkUserSession(); // Check if user is logged in on load
+             // Only proceed if Supabase client was successfully initialized
+             if (supabaseClient) {
+                 showPage('home-page'); // Start on the home page
+                 checkUserSession(); // Check if user is logged in on load
+             } else {
+                 // Show an error or minimal state if Supabase failed to load
+                 console.error("Supabase client failed to initialize. App functionality will be limited.");
+                 // Maybe show a specific error page or disable buttons
+                 updateUIForLoggedOutUser(); // Ensure UI is in logged-out state
+                 displayError(document.getElementById('login-error'), "Cannot connect to backend service."); // Show a generic error
+                 showPage('login-page'); // Show login page but it won't work
+             }
          });
 
-         // Listen for Supabase auth state changes (e.g., successful signup verification)
-         if (supabase) {
-             supabase.auth.onAuthStateChange((event, session) => {
-                 console.log('Auth state changed:', event);
+         // Listen for Supabase auth state changes (only if client is valid)
+         if (supabaseClient) {
+             supabaseClient.auth.onAuthStateChange((event, session) => { // Use client
+                 console.log('Auth state changed:', event, session);
                  if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
-                     currentUser = session.user;
-                     fetchUserProfile(currentUser.id).then(updateUIForLoggedInUser);
+                    if (session && session.user) {
+                         currentUser = session.user;
+                         fetchUserProfile(currentUser.id).then(updateUIForLoggedInUser);
+                    } else {
+                        // Handle case where event is SIGNED_IN but session is null (shouldn't happen often)
+                        updateUIForLoggedOutUser();
+                    }
                  } else if (event === 'SIGNED_OUT') {
                      updateUIForLoggedOutUser();
                  } else if (event === 'INITIAL_SESSION') {
-                    // Handled by initial checkUserSession call, but good to log
-                     if (session && session.user) {
-                         currentUser = session.user;
-                         fetchUserProfile(currentUser.id).then(updateUIForLoggedInUser);
-                     } else {
-                        updateUIForLoggedOutUser();
-                     }
+                    // Already handled by initial checkUserSession call, log for debugging
+                     console.log('Initial session event received.');
                  }
              });
          } else {
             console.warn("Supabase client not available, cannot listen for auth state changes.");
-            // Ensure UI reflects logged-out state if Supabase fails
-             updateUIForLoggedOutUser();
+            // Initial DOMContentLoaded handles the UI state already if client is null
          }
 
 
