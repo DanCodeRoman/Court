@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Court</title>
+  <title>Court App</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Styles -->
@@ -153,29 +153,27 @@
     }
   </style>
 
-  <!-- Load Supabase (UMD) with defer so it is available by the time our script runs -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
+  <!-- Load Supabase (UMD) so window.supabase is defined -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 
-  <!-- Our App Script (also deferred) -->
-  <script defer>
-    // Make sure we reference the global "supabase" object from the UMD script.
-    const SUPABASE_URL = "https://ewsovztnigqhmuxptcih.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3c292enRuaWdxaG11eHB0Y2loIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NzkwNzMsImV4cCI6MjA1OTQ1NTA3M30.-O95N99gXxNZfaA1KH1_3wplHbQzffpvC1h4z1jw0-8";
-
-    // Rename our client to avoid overshadowing the global 'supabase'
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // Declare currentPage here so it's ready before any onclick handlers are used.
+  <!-- Our app code -->
+  <script>
+    // 1) Declare global variables FIRST
     let currentPage = "homePage";
 
-    // Navigation function
+    // 2) Create Supabase client using the global "supabase"
+    const SUPABASE_URL = "https://ewsovztnigqhmuxptcih.supabase.co";
+    const SUPABASE_ANON_KEY =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3c292enRuaWdxaG11eHB0Y2loIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NzkwNzMsImV4cCI6MjA1OTQ1NTA3M30.-O95N99gXxNZfaA1KH1_3wplHbQzffpvC1h4z1jw0-8";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // 3) Functions that reference currentPage or supabaseClient
     async function navigateToPage(target) {
       document.getElementById(currentPage).classList.remove("active");
       document.getElementById(target).classList.add("active");
       currentPage = target;
     }
 
-    // Check Rank function
     async function checkRank() {
       const username = document.getElementById("usernameRank").value.trim();
       const rankDisplay = document.getElementById("rankDisplay");
@@ -202,13 +200,13 @@
           rankDisplay.textContent = "No rank found.";
           return;
         }
-        rankDisplay.textContent = "#" + data.ranking + (data.city ? " in " + data.city : "");
+        rankDisplay.textContent =
+          "#" + data.ranking + (data.city ? " in " + data.city : "");
       } catch (e) {
         rankError.textContent = "Error fetching rank.";
       }
     }
 
-    // Enter Game function
     async function enterGame() {
       const code = document.getElementById("gameCodeInput").value.trim();
       const err = document.getElementById("enterGameError");
@@ -235,7 +233,7 @@
           return;
         }
 
-        // Example: Insert user into 'game_players' table
+        // Insert user into 'game_players' table
         await supabaseClient.from("game_players").insert([
           { game_id: data.id, user_name: "TestUser" }
         ]);
@@ -246,7 +244,6 @@
       }
     }
 
-    // Create Game function
     async function createGame() {
       const type = document.getElementById("gameType").value;
       const res = document.getElementById("createGameResult");
