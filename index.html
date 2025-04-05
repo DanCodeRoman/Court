@@ -1,1250 +1,1079 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Court</title>
-    <!-- Load Supabase Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        /* Basic Reset & Global Styles */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Court</title>
+  <!-- Load Supabase Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    /* Basic Reset & Global Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #ffffff;
+      color: #000000;
+      line-height: 1.6;
+    }
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start; /* Align to top */
+      padding-top: 80px; /* Space for fixed header */
+      min-height: 100vh;
+      /* Subtle background pattern - SVG Court Lines */
+      background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23E0E0E0' stroke-width='0.5'%3E%3Ccircle cx='50' cy='50' r='40'/%3E%3Cpath d='M50 0 V100 M0 50 H100 M30 10 H70 M30 90 H70 M10 30 V70 M90 30 V70'/%3E%3C/g%3E%3C/svg%3E");
+      background-size: 200px 200px; /* Adjust size of the pattern tile */
+      background-repeat: repeat;
+    }
+    #app {
+      width: 100%;
+      max-width: 500px; /* Max width for content */
+      padding: 20px;
+      background-color: rgba(255, 255, 255, 0.95); /* Slightly opaque white to see pattern */
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      position: relative; /* Needed for absolute positioning inside */
+      min-height: 400px; /* Ensure some minimum height */
+      display: flex; /* Use flexbox for page alignment */
+      flex-direction: column;
+    }
+    /* Header */
+    header {
+      position: fixed; /* Fixed header */
+      top: 0;
+      left: 0;
+      width: 100%;
+      background-color: #fff;
+      padding: 10px 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 1000;
+    }
+    .app-title {
+      font-size: 1.5em;
+      font-weight: bold;
+    }
+    .auth-buttons button,
+    .auth-buttons span /* For logged in user display */ {
+      margin-left: 10px;
+      padding: 8px 15px;
+      font-size: 0.9em;
+    }
 
-        html, body {
-            height: 100%;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #ffffff;
-            color: #000000;
-            line-height: 1.6;
-        }
+    /* Page Sections */
+    .page {
+      display: none; /* Hidden by default */
+      width: 100%;
+      flex-grow: 1; /* Allow page content to fill space */
+      flex-direction: column;
+      align-items: center;
+      padding-top: 20px; /* Space below header */
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    .page.active {
+      display: flex; /* Show active page */
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    /* Common Elements */
+    h2 {
+      margin-bottom: 25px;
+      font-weight: 600;
+      text-align: center;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+    input[type="text"],
+    input[type="password"],
+    input[type="email"],
+    select {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 20px; /* Rounded inputs */
+      font-size: 1em;
+    }
+    button {
+      padding: 12px 25px;
+      background-color: #000000;
+      color: #ffffff;
+      border: none;
+      border-radius: 25px; /* Rounded buttons */
+      cursor: pointer;
+      font-size: 1em;
+      font-weight: 500;
+      transition: background-color 0.3s ease, transform 0.1s ease;
+      display: inline-block;
+    }
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    button:hover:not(:disabled) {
+      background-color: #333;
+    }
+    button:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+    .form-group {
+      margin-bottom: 15px;
+      width: 100%;
+    }
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      margin-top: 20px;
+      width: 100%;
+    }
+    .button-group button {
+      width: 80%;
+      max-width: 300px;
+    }
+    .link-button {
+      background: none;
+      border: none;
+      color: #007bff;
+      text-decoration: underline;
+      cursor: pointer;
+      padding: 5px;
+      font-size: 0.9em;
+    }
+    .link-button:hover {
+      color: #0056b3;
+    }
+    .back-button {
+      margin-top: 30px;
+      background-color: #6c757d; /* Grey back button */
+      font-size: 0.9em;
+    }
+    .back-button:hover {
+      background-color: #5a6268;
+    }
 
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: flex-start; /* Align to top */
-            padding-top: 80px; /* Space for fixed header */
-            min-height: 100vh;
-             /* Subtle background pattern - SVG Court Lines */
-             background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23E0E0E0' stroke-width='0.5'%3E%3Ccircle cx='50' cy='50' r='40'/%3E%3Cpath d='M50 0 V100 M0 50 H100 M30 10 H70 M30 90 H70 M10 30 V70 M90 30 V70'/%3E%3C/g%3E%3C/svg%3E");
-             background-size: 200px 200px; /* Adjust size of the pattern tile */
-             background-repeat: repeat;
-        }
+    /* Home Page */
+    #home-page .basketball-icon {
+      font-size: 4em; /* Make icon larger */
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    #home-page .basketball-icon svg {
+      width: 60px;
+      height: 60px;
+      fill: #000;
+    }
 
-        #app {
-            width: 100%;
-            max-width: 500px; /* Max width for content */
-            padding: 20px;
-            background-color: rgba(255, 255, 255, 0.95); /* Slightly opaque white to see pattern */
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            position: relative; /* Needed for absolute positioning inside */
-            min-height: 400px; /* Ensure some minimum height */
-            display: flex; /* Use flexbox for page alignment */
-            flex-direction: column;
-        }
+    /* Create Game Page */
+    #create-game-page .game-type-select label {
+      margin-right: 15px;
+      display: inline-block;
+    }
+    #create-game-page .game-type-select input[type="radio"] {
+      margin-right: 5px;
+      width: auto; 
+      vertical-align: middle;
+    }
+    #game-code-display {
+      margin-top: 20px;
+      font-size: 1.2em;
+      font-weight: bold;
+      background-color: #f0f0f0;
+      padding: 10px 15px;
+      border-radius: 5px;
+      text-align: center;
+      word-break: break-all;
+    }
+    #game-code-display:empty {
+      display: none;
+    }
 
-        /* Header */
-        header {
-            position: fixed; /* Fixed header */
-            top: 0;
-            left: 0;
-            width: 100%;
-            background-color: #fff;
-            padding: 10px 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            z-index: 1000;
-        }
+    /* Check Rank Page */
+    #check-rank-page #rank-display,
+    #leaderboard-page .leaderboard-list {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-radius: 5px;
+      text-align: center;
+      width: 100%;
+    }
 
-        .app-title {
-            font-size: 1.5em;
-            font-weight: bold;
-        }
+    /* Leaderboard Page */
+    #leaderboard-page .leaderboard-list ul {
+      list-style: none;
+      padding: 0;
+    }
+    #leaderboard-page .leaderboard-list li {
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    #leaderboard-page .leaderboard-list li:last-child {
+      border-bottom: none;
+    }
+    #leaderboard-page .leaderboard-list .rank { font-weight: bold; margin-right: 10px;}
+    #leaderboard-page .leaderboard-list .name { flex-grow: 1; text-align: left; }
+    #leaderboard-page .leaderboard-list .location { font-size: 0.9em; color: #555; }
+    #leaderboard-page .leaderboard-list .score { font-style: italic; color: #555; margin-left: 10px; }
+    #leaderboard-page .leaderboard-controls {
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    #leaderboard-page .leaderboard-controls button {
+      margin: 0 5px;
+      padding: 5px 10px;
+      font-size: 0.9em;
+      background-color: #e9ecef;
+      color: #000;
+    }
+    #leaderboard-page .leaderboard-controls button.active {
+      background-color: #000;
+      color: #fff;
+    }
+    #leaderboard-page .leaderboard-controls button:disabled {
+      background-color: #f8f9fa;
+      color: #aaa;
+      cursor: not-allowed;
+    }
 
-        .auth-buttons button,
-        .auth-buttons span /* For logged in user display */
-         {
-            margin-left: 10px;
-            padding: 8px 15px;
-            font-size: 0.9em;
-        }
-
-        /* Page Sections */
-        .page {
-            display: none; /* Hidden by default */
-            width: 100%;
-            flex-grow: 1; /* Allow page content to fill space */
-            flex-direction: column;
-            align-items: center;
-            padding-top: 20px; /* Space below header */
-            animation: fadeIn 0.5s ease-in-out;
-        }
-
-        .page.active {
-            display: flex; /* Show active page */
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Common Elements */
-        h2 {
-            margin-bottom: 25px;
-            font-weight: 600;
-            text-align: center;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
-
-        input[type="text"],
-        input[type="password"],
-        input[type="email"], /* Added email type for potential username */
-        select {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 20px; /* Rounded inputs */
-            font-size: 1em;
-        }
-
-        button {
-            padding: 12px 25px;
-            background-color: #000000;
-            color: #ffffff;
-            border: none;
-            border-radius: 25px; /* Rounded buttons */
-            cursor: pointer;
-            font-size: 1em;
-            font-weight: 500;
-            transition: background-color 0.3s ease, transform 0.1s ease;
-            display: inline-block; /* Allow margin auto to work */
-        }
-        button:disabled {
-             background-color: #ccc;
-             cursor: not-allowed;
-        }
-
-        button:hover:not(:disabled) {
-            background-color: #333;
-        }
-        button:active:not(:disabled) {
-            transform: scale(0.98);
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-            width: 100%;
-        }
-
-        .button-group {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px; /* Space between buttons */
-            margin-top: 20px;
-            width: 100%;
-        }
-         .button-group button {
-            width: 80%; /* Make main action buttons wider */
-            max-width: 300px;
-         }
-
-        .link-button {
-            background: none;
-            border: none;
-            color: #007bff;
-            text-decoration: underline;
-            cursor: pointer;
-            padding: 5px;
-            font-size: 0.9em;
-        }
-        .link-button:hover {
-            color: #0056b3;
-        }
-
-        .back-button {
-             margin-top: 30px;
-             background-color: #6c757d; /* Grey back button */
-             font-size: 0.9em;
-        }
-        .back-button:hover {
-            background-color: #5a6268;
-        }
-
-
-        /* Specific Page Styles */
-        #home-page .basketball-icon {
-            font-size: 4em; /* Make icon larger */
-            margin-bottom: 20px;
-            text-align: center;
-            /* Simple text fallback if SVG/Font fails */
-            /* content: '🏀'; */
-        }
-         #home-page .basketball-icon svg {
-            width: 60px;
-            height: 60px;
-            fill: #000;
-         }
-
-        #create-game-page .game-type-select label {
-            margin-right: 15px;
-            display: inline-block; /* Layout radio buttons inline */
-        }
-         #create-game-page .game-type-select input[type="radio"] {
-            margin-right: 5px;
-            width: auto; /* Override default width */
-            vertical-align: middle;
-         }
-        #game-code-display {
-            margin-top: 20px;
-            font-size: 1.2em;
-            font-weight: bold;
-            background-color: #f0f0f0;
-            padding: 10px 15px;
-            border-radius: 5px;
-            text-align: center;
-            word-break: break-all; /* Prevent long codes overflowing */
-        }
-        #game-code-display:empty {
-            display: none; /* Hide if empty */
-        }
-
-        #check-rank-page #rank-display,
-        #leaderboard-page .leaderboard-list {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 5px;
-            text-align: center;
-            width: 100%;
-        }
-         #leaderboard-page .leaderboard-list ul {
-            list-style: none;
-            padding: 0;
-         }
-          #leaderboard-page .leaderboard-list li {
-            padding: 8px 0;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap; /* Allow wrapping on smaller screens */
-            gap: 5px; /* Space between wrapped items */
-          }
-          #leaderboard-page .leaderboard-list li:last-child {
-            border-bottom: none;
-          }
-          #leaderboard-page .leaderboard-list .rank { font-weight: bold; margin-right: 10px;}
-          #leaderboard-page .leaderboard-list .name { flex-grow: 1; text-align: left; }
-          #leaderboard-page .leaderboard-list .location { font-size: 0.9em; color: #555; }
-          #leaderboard-page .leaderboard-list .score { font-style: italic; color: #555; margin-left: 10px; }
-
-          #leaderboard-page .leaderboard-controls {
-            margin-bottom: 15px;
-            text-align: center;
-          }
-           #leaderboard-page .leaderboard-controls button {
-             margin: 0 5px;
-             padding: 5px 10px;
-             font-size: 0.9em;
-             background-color: #e9ecef;
-             color: #000;
-           }
-            #leaderboard-page .leaderboard-controls button.active {
-                background-color: #000;
-                color: #fff;
-            }
-             #leaderboard-page .leaderboard-controls button:disabled {
-                 background-color: #f8f9fa;
-                 color: #aaa;
-                 cursor: not-allowed;
-            }
-
-
-        /* Form feedback/error messages */
-        .error-message {
-            color: #dc3545;
-            font-size: 0.9em;
-            margin-top: -10px;
-            margin-bottom: 10px;
-            text-align: center;
-            display: none; /* Hidden by default */
-        }
-         .success-message {
-            color: #28a745;
-            font-size: 0.9em;
-            margin-top: 10px;
-            margin-bottom: 10px;
-            text-align: center;
-            display: none; /* Hidden by default */
-         }
-
-
-    </style>
+    /* Form feedback/error messages */
+    .error-message {
+      color: #dc3545;
+      font-size: 0.9em;
+      margin-top: -10px;
+      margin-bottom: 10px;
+      text-align: center;
+      display: none; 
+    }
+    .success-message {
+      color: #28a745;
+      font-size: 0.9em;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      text-align: center;
+      display: none; 
+    }
+  </style>
 </head>
 <body>
 
-    <header>
-        <div class="app-title">Court</div>
-        <div class="auth-buttons">
-             <!-- Auth buttons will be dynamically updated by JS -->
-             <span id="user-display" style="display: none; margin-right: 15px;"></span>
-             <button id="login-nav-btn">Login</button>
-             <button id="signup-nav-btn">Sign Up</button>
-             <button id="logout-btn" style="display: none;">Logout</button>
+  <header>
+    <div class="app-title">Court</div>
+    <div class="auth-buttons">
+      <!-- Auth buttons dynamically updated by JS -->
+      <span id="user-display" style="display: none; margin-right: 15px;"></span>
+      <button id="login-nav-btn">Login</button>
+      <button id="signup-nav-btn">Sign Up</button>
+      <button id="logout-btn" style="display: none;">Logout</button>
+    </div>
+  </header>
+
+  <div id="app">
+    <!-- Home Page -->
+    <section id="home-page" class="page active">
+      <div class="basketball-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+          <!--! Font Awesome Basketball Icon -->
+          <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM133.3 89.9C161.4 60.8 216 32 256 32s94.6 28.8 122.7 57.9c1.7 1.7 3.1 3.7 3.8 5.9l-16.1 2.1C360.7 90.1 313.8 72 256 72s-104.7 18.1-110.4 25.9l-16.1-2.1c.7-2.1 2.1-4.1 3.8-5.9zM392.9 112.3c-1.7-1.7-3.1-3.7-3.8-5.9L373 108.5c5.7 7.8 10.4 16.2 13.9 24.9L410.7 131c-6.4-10.4-14.7-19.6-24.7-26.5l-10.9-7.2c-6-3.9-12.3-6.9-18.8-8.8l-1.8-15.7c11.2 3.3 21.7 8.4 31.1 15.2zM99.1 112.3C109 105.3 120.1 100 132.3 97.2L130.5 113c-6.5 1.9-12.8 4.9-18.8 8.8l-10.9 7.2C90.8 135.4 82.5 144.6 76.1 155l23.8-2.3c3.5-8.7 8.2-17.1 13.9-24.9L99.1 112.3zm74.7 281.7C146.6 373.2 92 344 52 344s-94.6-29.2-122.7-58.3c-1.7-1.7-3.1-3.7-3.8-5.9l16.1-2.1c5.7 7.8 52.6 25.9 110.4 25.9s104.7-18.1 110.4-25.9l16.1 2.1c-.7 2.1-2.1 4.1-3.8 5.9zM101.3 380.7l-23.8 2.3c6.4 10.4 14.7 19.6 24.7 26.5l10.9 7.2c6 3.9 12.3 6.9 18.8 8.8l1.8 15.7C120.1 438.1 109 433 99.1 426.2l-11.7-7.6c-9.5-6.2-17.9-13.7-24.9-22.4zm287.8-22.4c-7 8.7-15.5 16.2-24.9 22.4l-11.7 7.6c-9.9 6.8-20.9 11.9-32.7 15.2l1.8-15.7c6.5-1.9 12.8-4.9 18.8-8.8l10.9-7.2c10-6.9 18.3-16.1 24.7-26.5l23.8 2.3zm-13.9-24.9L373 331.5c-5.7-7.8-10.4-16.2-13.9-24.9l-23.8 2.3c6.4-10.4 14.7-19.6 24.7-26.5l10.9-7.2c6-3.9 12.3-6.9 18.8-8.8l1.8-15.7c11.2 3.3 21.7 8.4 31.1 15.2l11.7 7.6c9.5 6.2 17.9 13.7 24.9 22.4l-16.1-2.1c-5.7-7.8-52.6-25.9-110.4-25.9s-104.7 18.1-110.4 25.9l-16.1 2.1zm-18.8 8.8l-10.9 7.2c-10 6.9-18.3 16.1-24.7 26.5L101.3 380.7l16.1 2.1c.7-2.1 2.1-4.1 3.8-5.9c28.1-29.2 82.7-58.3 122.7-58.3s94.6 29.2 122.7 58.3c1.7 1.7 3.1 3.7 3.8 5.9l16.1-2.1c-.7-2.1-2.1-4.1-3.8-5.9c-28.1-29.2-82.7-58.3-122.7-58.3s-94.6 29.2-122.7 58.3z"/>
+        </svg>
+      </div>
+      <h2>Welcome to Court</h2>
+      <p style="text-align: center; margin-bottom: 30px;">Organize your next pickup game.</p>
+      <div class="button-group">
+        <button id="nav-create-game" disabled>Create Game</button>
+        <button id="nav-enter-game" disabled>Enter Game Code</button>
+        <button id="nav-check-rank">Check Rank</button>
+        <button id="nav-leaderboard">Leaderboard</button>
+      </div>
+    </section>
+
+    <!-- Login Page -->
+    <section id="login-page" class="page">
+      <h2>Login</h2>
+      <div id="login-error" class="error-message"></div>
+      <form id="login-form" style="width: 100%;">
+        <div class="form-group">
+          <label for="login-username">Email</label>
+          <input type="email" id="login-username" name="username" required autocomplete="username" />
         </div>
-    </header>
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" name="password" required autocomplete="current-password" />
+        </div>
+        <div class="button-group">
+          <button type="submit">Login</button>
+          <button type="button" class="link-button" id="goto-signup">Don't have an account? Sign Up</button>
+          <button type="button" class="back-button" data-target="home-page">Back to Home</button>
+        </div>
+      </form>
+    </section>
 
-    <div id="app">
+    <!-- Sign Up Page -->
+    <section id="signup-page" class="page">
+      <h2>Sign Up</h2>
+      <div id="signup-error" class="error-message"></div>
+      <div id="signup-success" class="success-message"></div>
+      <form id="signup-form" style="width: 100%;">
+        <div class="form-group">
+          <label for="signup-username">Username</label>
+          <input type="text" id="signup-username" name="username" required minlength="3" maxlength="50" />
+        </div>
+        <div class="form-group">
+          <label for="signup-email">Email</label>
+          <input type="email" id="signup-email" name="email" required autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label for="signup-password">Password</label>
+          <input type="password" id="signup-password" name="password" required minlength="6" autocomplete="new-password" />
+        </div>
+        <div class="form-group">
+          <label for="signup-confirm-password">Confirm Password</label>
+          <input type="password" id="signup-confirm-password" name="confirm_password" required minlength="6" autocomplete="new-password" />
+        </div>
+        <div class="form-group">
+          <label for="signup-city">City</label>
+          <input type="text" id="signup-city" name="city" required />
+        </div>
+        <div class="form-group">
+          <label for="signup-state">State (USA Only)</label>
+          <select id="signup-state" name="state" required>
+            <option value="" disabled selected>Select State</option>
+            <option value="AL">Alabama</option> <option value="AK">Alaska</option>
+            <option value="AZ">Arizona</option> <option value="AR">Arkansas</option>
+            <option value="CA">California</option> <option value="CO">Colorado</option>
+            <option value="CT">Connecticut</option> <option value="DE">Delaware</option>
+            <option value="FL">Florida</option> <option value="GA">Georgia</option>
+            <option value="HI">Hawaii</option> <option value="ID">Idaho</option>
+            <option value="IL">Illinois</option> <option value="IN">Indiana</option>
+            <option value="IA">Iowa</option> <option value="KS">Kansas</option>
+            <option value="KY">Kentucky</option> <option value="LA">Louisiana</option>
+            <option value="ME">Maine</option> <option value="MD">Maryland</option>
+            <option value="MA">Massachusetts</option> <option value="MI">Michigan</option>
+            <option value="MN">Minnesota</option> <option value="MS">Mississippi</option>
+            <option value="MO">Missouri</option> <option value="MT">Montana</option>
+            <option value="NE">Nebraska</option> <option value="NV">Nevada</option>
+            <option value="NH">New Hampshire</option> <option value="NJ">New Jersey</option>
+            <option value="NM">New Mexico</option> <option value="NY">New York</option>
+            <option value="NC">North Carolina</option> <option value="ND">North Dakota</option>
+            <option value="OH">Ohio</option> <option value="OK">Oklahoma</option>
+            <option value="OR">Oregon</option> <option value="PA">Pennsylvania</option>
+            <option value="RI">Rhode Island</option> <option value="SC">South Carolina</option>
+            <option value="SD">South Dakota</option> <option value="TN">Tennessee</option>
+            <option value="TX">Texas</option> <option value="UT">Utah</option>
+            <option value="VT">Vermont</option> <option value="VA">Virginia</option>
+            <option value="WA">Washington</option> <option value="WV">West Virginia</option>
+            <option value="WI">Wisconsin</option> <option value="WY">Wyoming</option>
+            <option value="DC">District of Columbia</option>
+          </select>
+        </div>
+        <div class="button-group">
+          <button type="submit">Sign Up</button>
+          <button type="button" class="link-button" id="goto-login">Already have an account? Login</button>
+          <button type="button" class="back-button" data-target="home-page">Back to Home</button>
+        </div>
+      </form>
+    </section>
 
-        <!-- Home Page -->
-        <section id="home-page" class="page active">
-            <div class="basketball-icon">
-                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.5.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM133.3 89.9C161.4 60.8 216 32 256 32s94.6 28.8 122.7 57.9c1.7 1.7 3.1 3.7 3.8 5.9l-16.1 2.1C360.7 90.1 313.8 72 256 72s-104.7 18.1-110.4 25.9l-16.1-2.1c.7-2.1 2.1-4.1 3.8-5.9zM392.9 112.3c-1.7-1.7-3.1-3.7-3.8-5.9L373 108.5c5.7 7.8 10.4 16.2 13.9 24.9L410.7 131c-6.4-10.4-14.7-19.6-24.7-26.5l-10.9-7.2c-6-3.9-12.3-6.9-18.8-8.8l-1.8-15.7c11.2 3.3 21.7 8.4 31.1 15.2zM99.1 112.3C109 105.3 120.1 100 132.3 97.2L130.5 113c-6.5 1.9-12.8 4.9-18.8 8.8l-10.9 7.2C90.8 135.4 82.5 144.6 76.1 155l23.8-2.3c3.5-8.7 8.2-17.1 13.9-24.9L99.1 112.3zm74.7 281.7C146.6 373.2 92 344 52 344s-94.6-29.2-122.7-58.3c-1.7-1.7-3.1-3.7-3.8-5.9l16.1-2.1c5.7 7.8 52.6 25.9 110.4 25.9s104.7-18.1 110.4-25.9l16.1 2.1c-.7 2.1-2.1 4.1-3.8 5.9zM101.3 380.7l-23.8 2.3c6.4 10.4 14.7 19.6 24.7 26.5l10.9 7.2c6 3.9 12.3 6.9 18.8 8.8l1.8 15.7C120.1 438.1 109 433 99.1 426.2l-11.7-7.6c-9.5-6.2-17.9-13.7-24.9-22.4zm287.8-22.4c-7 8.7-15.5 16.2-24.9 22.4l-11.7 7.6c-9.9 6.8-20.9 11.9-32.7 15.2l1.8-15.7c6.5-1.9 12.8-4.9 18.8-8.8l10.9-7.2c10-6.9 18.3-16.1 24.7-26.5l23.8 2.3zm-13.9-24.9L373 331.5c-5.7-7.8-10.4-16.2-13.9-24.9l-23.8 2.3c6.4-10.4 14.7-19.6 24.7-26.5l10.9-7.2c6-3.9 12.3-6.9 18.8-8.8l1.8-15.7c11.2 3.3 21.7 8.4 31.1 15.2l11.7 7.6c9.5 6.2 17.9 13.7 24.9 22.4l-16.1-2.1c-5.7-7.8-52.6-25.9-110.4-25.9s-104.7 18.1-110.4 25.9l-16.1 2.1zm-18.8 8.8l-10.9 7.2c-10 6.9-18.3 16.1-24.7 26.5L101.3 380.7l16.1 2.1c.7-2.1 2.1-4.1 3.8-5.9c28.1-29.2 82.7-58.3 122.7-58.3s94.6 29.2 122.7 58.3c1.7 1.7 3.1 3.7 3.8 5.9l16.1-2.1c-.7-2.1-2.1-4.1-3.8-5.9c-28.1-29.2-82.7-58.3-122.7-58.3s-94.6 29.2-122.7 58.3z"/></svg>
-            </div>
-            <h2>Welcome to Court</h2>
-            <p style="text-align: center; margin-bottom: 30px;">Organize your next pickup game.</p>
-            <div class="button-group">
-                <button id="nav-create-game" disabled>Create Game</button> <!-- Start disabled -->
-                <button id="nav-enter-game" disabled>Enter Game Code</button> <!-- Start disabled -->
-                <button id="nav-check-rank">Check Rank</button>
-                <button id="nav-leaderboard">Leaderboard</button>
-            </div>
-        </section>
+    <!-- Check Rank Page -->
+    <section id="check-rank-page" class="page">
+      <h2>Check Rank</h2>
+      <div id="rank-error" class="error-message"></div>
+      <form id="check-rank-form" style="width: 100%;">
+        <div class="form-group">
+          <label for="rank-username">Enter Username to Check</label>
+          <input type="text" id="rank-username" name="rank_username" required />
+        </div>
+        <div class="button-group">
+          <button type="submit">Check Rank</button>
+        </div>
+      </form>
+      <div id="rank-display"></div>
+      <div class="button-group">
+        <button type="button" class="back-button" data-target="home-page">Back to Home</button>
+      </div>
+    </section>
 
-        <!-- Login Page -->
-        <section id="login-page" class="page">
-            <h2>Login</h2>
-             <div id="login-error" class="error-message"></div>
-            <form id="login-form" style="width: 100%;">
-                <div class="form-group">
-                    <label for="login-username">Email</label>
-                    <input type="email" id="login-username" name="username" required autocomplete="username">
-                </div>
-                <div class="form-group">
-                    <label for="login-password">Password</label>
-                    <input type="password" id="login-password" name="password" required autocomplete="current-password">
-                </div>
-                <div class="button-group">
-                     <button type="submit">Login</button>
-                     <button type="button" class="link-button" id="goto-signup">Don't have an account? Sign Up</button>
-                     <button type="button" class="back-button" data-target="home-page">Back to Home</button>
-                 </div>
-            </form>
-        </section>
+    <!-- Enter Game Page -->
+    <section id="enter-game-page" class="page">
+      <h2>Enter Game</h2>
+      <div id="enter-game-error" class="error-message"></div>
+      <div id="enter-game-success" class="success-message"></div>
+      <form id="enter-game-form" style="width: 100%;">
+        <div class="form-group">
+          <label for="game-code">Enter Game Code</label>
+          <input type="text" id="game-code" name="game_code" required />
+        </div>
+        <div class="button-group">
+          <button type="submit">Enter Game</button>
+        </div>
+      </form>
+      <div class="button-group">
+        <button type="button" class="back-button" data-target="home-page">Back to Home</button>
+      </div>
+    </section>
 
-        <!-- Sign Up Page -->
-        <section id="signup-page" class="page">
-            <h2>Sign Up</h2>
-            <div id="signup-error" class="error-message"></div>
-            <div id="signup-success" class="success-message"></div>
-            <form id="signup-form" style="width: 100%;">
-                <div class="form-group">
-                    <label for="signup-username">Username</label>
-                    <input type="text" id="signup-username" name="username" required minlength="3" maxlength="50">
-                </div>
-                <div class="form-group">
-                    <label for="signup-email">Email</label>
-                    <input type="email" id="signup-email" name="email" required autocomplete="email">
-                </div>
-                <div class="form-group">
-                    <label for="signup-password">Password</label>
-                    <input type="password" id="signup-password" name="password" required minlength="6" autocomplete="new-password">
-                </div>
-                 <div class="form-group">
-                    <label for="signup-confirm-password">Confirm Password</label>
-                    <input type="password" id="signup-confirm-password" name="confirm_password" required minlength="6" autocomplete="new-password">
-                </div>
-                 <div class="form-group">
-                     <label for="signup-city">City</label>
-                     <input type="text" id="signup-city" name="city" required>
-                 </div>
-                <div class="form-group">
-                    <label for="signup-state">State (USA Only)</label>
-                    <select id="signup-state" name="state" required>
-                        <option value="" disabled selected>Select State</option>
-                        <option value="AL">Alabama</option> <option value="AK">Alaska</option>
-                        <option value="AZ">Arizona</option> <option value="AR">Arkansas</option>
-                        <option value="CA">California</option> <option value="CO">Colorado</option>
-                        <option value="CT">Connecticut</option> <option value="DE">Delaware</option>
-                        <option value="FL">Florida</option> <option value="GA">Georgia</option>
-                        <option value="HI">Hawaii</option> <option value="ID">Idaho</option>
-                        <option value="IL">Illinois</option> <option value="IN">Indiana</option>
-                        <option value="IA">Iowa</option> <option value="KS">Kansas</option>
-                        <option value="KY">Kentucky</option> <option value="LA">Louisiana</option>
-                        <option value="ME">Maine</option> <option value="MD">Maryland</option>
-                        <option value="MA">Massachusetts</option> <option value="MI">Michigan</option>
-                        <option value="MN">Minnesota</option> <option value="MS">Mississippi</option>
-                        <option value="MO">Missouri</option> <option value="MT">Montana</option>
-                        <option value="NE">Nebraska</option> <option value="NV">Nevada</option>
-                        <option value="NH">New Hampshire</option> <option value="NJ">New Jersey</option>
-                        <option value="NM">New Mexico</option> <option value="NY">New York</option>
-                        <option value="NC">North Carolina</option> <option value="ND">North Dakota</option>
-                        <option value="OH">Ohio</option> <option value="OK">Oklahoma</option>
-                        <option value="OR">Oregon</option> <option value="PA">Pennsylvania</option>
-                        <option value="RI">Rhode Island</option> <option value="SC">South Carolina</option>
-                        <option value="SD">South Dakota</option> <option value="TN">Tennessee</option>
-                        <option value="TX">Texas</option> <option value="UT">Utah</option>
-                        <option value="VT">Vermont</option> <option value="VA">Virginia</option>
-                        <option value="WA">Washington</option> <option value="WV">West Virginia</option>
-                        <option value="WI">Wisconsin</option> <option value="WY">Wyoming</option>
-                        <option value="DC">District of Columbia</option>
-                        <!-- Add Territories if needed -->
-                    </select>
-                </div>
-                <div class="button-group">
-                     <button type="submit">Sign Up</button>
-                     <button type="button" class="link-button" id="goto-login">Already have an account? Login</button>
-                     <button type="button" class="back-button" data-target="home-page">Back to Home</button>
-                 </div>
-            </form>
-        </section>
+    <!-- Create Game Page -->
+    <section id="create-game-page" class="page">
+      <h2>Create Game</h2>
+      <div id="create-game-error" class="error-message"></div>
+      <div id="create-game-success" class="success-message"></div>
+      <form id="create-game-form" style="width: 100%;">
+        <div class="form-group game-type-select">
+          <label>Select Game Type:</label><br />
+          <input type="radio" id="type-1v1" name="game_type" value="1v1" required />
+          <label for="type-1v1">1v1</label>
+          <input type="radio" id="type-2v2" name="game_type" value="2v2" />
+          <label for="type-2v2">2v2</label>
+          <input type="radio" id="type-3v3" name="game_type" value="3v3" />
+          <label for="type-3v3">3v3</label>
+          <input type="radio" id="type-4v4" name="game_type" value="4v4" />
+          <label for="type-4v4">4v4</label>
+          <input type="radio" id="type-5v5" name="game_type" value="5v5" />
+          <label for="type-5v5">5v5</label>
+        </div>
+        <div class="button-group">
+          <button type="submit">Generate Game Code</button>
+        </div>
+      </form>
+      <div id="game-code-display"></div>
+      <div class="button-group">
+        <button type="button" class="back-button" data-target="home-page">Back to Home</button>
+      </div>
+    </section>
 
-        <!-- Check Rank Page -->
-        <section id="check-rank-page" class="page">
-            <h2>Check Rank</h2>
-            <div id="rank-error" class="error-message"></div>
-            <form id="check-rank-form" style="width: 100%;">
-                 <div class="form-group">
-                     <label for="rank-username">Enter Username to Check</label>
-                     <input type="text" id="rank-username" name="rank_username" required>
-                 </div>
-                 <div class="button-group">
-                     <button type="submit">Check Rank</button>
-                 </div>
-            </form>
-            <div id="rank-display">
-                 <!-- Rank will be displayed here -->
-            </div>
-             <div class="button-group">
-                <button type="button" class="back-button" data-target="home-page">Back to Home</button>
-            </div>
-        </section>
+    <!-- Leaderboard Page -->
+    <section id="leaderboard-page" class="page">
+      <h2>Leaderboard</h2>
+      <div class="leaderboard-controls">
+        <button id="leaderboard-city-btn" disabled>My City</button>
+        <button id="leaderboard-state-btn" disabled>My State</button>
+        <button id="leaderboard-country-btn" class="active">Country</button>
+      </div>
+      <div id="leaderboard-loading" style="text-align: center; margin: 20px;">Loading...</div>
+      <div id="leaderboard-error" class="error-message"></div>
+      <div id="leaderboard-display" class="leaderboard-list" style="display: none;">
+        <h3 id="leaderboard-title">Country Leaderboard</h3>
+        <ul id="leaderboard-ul"></ul>
+      </div>
+      <div class="button-group">
+        <button type="button" class="back-button" data-target="home-page">Back to Home</button>
+      </div>
+    </section>
+  </div> <!-- /#app -->
 
-        <!-- Enter Game Page -->
-        <section id="enter-game-page" class="page">
-            <h2>Enter Game</h2>
-            <div id="enter-game-error" class="error-message"></div>
-             <div id="enter-game-success" class="success-message"></div>
-            <form id="enter-game-form" style="width: 100%;">
-                 <div class="form-group">
-                     <label for="game-code">Enter Game Code</label>
-                     <input type="text" id="game-code" name="game_code" required>
-                 </div>
-                 <div class="button-group">
-                     <button type="submit">Enter Game</button>
-                 </div>
-            </form>
-             <div class="button-group">
-                <button type="button" class="back-button" data-target="home-page">Back to Home</button>
-            </div>
-        </section>
+  <script>
+    // --- Supabase Setup ---
+    const SUPABASE_URL = 'https://noxophuyplfgcmjqinrb.supabase.co'; 
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5veG9waHV5cGxmZ2NtanFpbnJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4ODMzMDIsImV4cCI6MjA1OTQ1OTMwMn0.UlX8E64FWEuJz1zJ1m9U9WDuyCRfHhV-AscEGzheTSU';
 
-        <!-- Create Game Page -->
-        <section id="create-game-page" class="page">
-            <h2>Create Game</h2>
-             <div id="create-game-error" class="error-message"></div>
-             <div id="create-game-success" class="success-message"></div>
-            <form id="create-game-form" style="width: 100%;">
-                 <div class="form-group game-type-select">
-                    <label>Select Game Type:</label><br>
-                    <input type="radio" id="type-1v1" name="game_type" value="1v1" required><label for="type-1v1">1v1</label>
-                    <input type="radio" id="type-2v2" name="game_type" value="2v2"><label for="type-2v2">2v2</label>
-                    <input type="radio" id="type-3v3" name="game_type" value="3v3"><label for="type-3v3">3v3</label>
-                    <input type="radio" id="type-4v4" name="game_type" value="4v4"><label for="type-4v4">4v4</label>
-                    <input type="radio" id="type-5v5" name="game_type" value="5v5"><label for="type-5v5">5v5</label>
-                 </div>
-                 <div class="button-group">
-                    <button type="submit">Generate Game Code</button>
-                </div>
-            </form>
-            <div id="game-code-display">
-                <!-- Generated code appears here -->
-            </div>
-             <div class="button-group">
-                <button type="button" class="back-button" data-target="home-page">Back to Home</button>
-            </div>
-        </section>
+    let supabaseClient;
+    try {
+      if (typeof supabase === 'undefined' || !supabase.createClient) {
+        throw new Error("Supabase library not loaded correctly.");
+      }
+      supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      console.log('Supabase client initialized.');
+    } catch (error) {
+      console.error('Error initializing Supabase client:', error);
+      supabaseClient = null;
+      alert(`Failed to connect to the backend: ${error.message}`);
+    }
 
-        <!-- Leaderboard Page -->
-        <section id="leaderboard-page" class="page">
-            <h2>Leaderboard</h2>
-            <div class="leaderboard-controls">
-                 <button id="leaderboard-city-btn" disabled>My City</button> <!-- Start disabled -->
-                 <button id="leaderboard-state-btn" disabled>My State</button> <!-- Start disabled -->
-                 <button id="leaderboard-country-btn" class="active">Country</button>
-             </div>
-            <div id="leaderboard-loading" style="text-align: center; margin: 20px;">Loading...</div>
-            <div id="leaderboard-error" class="error-message"></div>
-            <div id="leaderboard-display" class="leaderboard-list">
-                <h3 id="leaderboard-title">Country Leaderboard</h3>
-                <ul id="leaderboard-ul">
-                    <!-- Leaderboard items will be populated here -->
-                </ul>
-            </div>
-             <div class="button-group">
-                <button type="button" class="back-button" data-target="home-page">Back to Home</button>
-            </div>
-        </section>
+    // --- Global Variables ---
+    let currentUser = null;
+    let userProfile = null;
 
-    </div><!-- /#app -->
+    // --- DOM Elements ---
+    const pages = document.querySelectorAll('.page');
+    const appDiv = document.getElementById('app');
+    const loginNavBtn = document.getElementById('login-nav-btn');
+    const signupNavBtn = document.getElementById('signup-nav-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userDisplay = document.getElementById('user-display');
 
-    <script>
-        // --- Supabase Setup ---
-        // IMPORTANT! Verify SUPABASE_URL is correct for your project.
-        // Found in your Supabase project settings: Project Settings -> API -> Project URL
-        const SUPABASE_URL = 'https://noxophuyplfgcmjqinrb.supabase.co'; // <-- VERIFY THIS URL!
+    // Form & Display Elements
+    const loginForm = document.getElementById('login-form');
+    const signupForm = document.getElementById('signup-form');
+    const checkRankForm = document.getElementById('check-rank-form');
+    const enterGameForm = document.getElementById('enter-game-form');
+    const createGameForm = document.getElementById('create-game-form');
 
-        // Provided Anon Public Key
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5veG9waHV5cGxmZ2NtanFpbnJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4ODMzMDIsImV4cCI6MjA1OTQ1OTMwMn0.UlX8E64FWEuJz1zJ1m9U9WDuyCRfHhV-AscEGzheTSU';
+    const loginErrorDiv = document.getElementById('login-error');
+    const signupErrorDiv = document.getElementById('signup-error');
+    const signupSuccessDiv = document.getElementById('signup-success');
+    const rankErrorDiv = document.getElementById('rank-error');
+    const rankDisplayDiv = document.getElementById('rank-display');
+    const enterGameErrorDiv = document.getElementById('enter-game-error');
+    const enterGameSuccessDiv = document.getElementById('enter-game-success');
+    const createGameErrorDiv = document.getElementById('create-game-error');
+    const createGameSuccessDiv = document.getElementById('create-game-success');
+    const gameCodeDisplayDiv = document.getElementById('game-code-display');
+    const leaderboardLoadingDiv = document.getElementById('leaderboard-loading');
+    const leaderboardErrorDiv = document.getElementById('leaderboard-error');
+    const leaderboardDisplayDiv = document.getElementById('leaderboard-display');
+    const leaderboardUl = document.getElementById('leaderboard-ul');
+    const leaderboardTitle = document.getElementById('leaderboard-title');
+    const leaderboardCityBtn = document.getElementById('leaderboard-city-btn');
+    const leaderboardStateBtn = document.getElementById('leaderboard-state-btn');
+    const leaderboardCountryBtn = document.getElementById('leaderboard-country-btn');
 
-        // Check if values look like placeholders (basic check)
-        if (!SUPABASE_URL || SUPABASE_URL.includes('<your-project-ref>') || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.length < 50) {
-             console.warn('Supabase URL or Anon Key might be incorrect. Please verify them in the script.');
-             alert('App backend is not configured correctly. Please check Supabase URL and Key in the code.');
+    function showPage(pageId) {
+      pages.forEach(page => page.classList.remove('active'));
+      const targetPage = document.getElementById(pageId);
+      if (targetPage) {
+        targetPage.classList.add('active');
+        if (appDiv) appDiv.scrollTop = 0; 
+        if (pageId === 'leaderboard-page' && supabaseClient) {
+          fetchLeaderboard('country'); 
+          setActiveLeaderboardButton(leaderboardCountryBtn);
+        }
+      } else {
+        console.error(`Page with ID ${pageId} not found. Showing home instead.`);
+        document.getElementById('home-page').classList.add('active');
+      }
+    }
+
+    function displayError(element, message) {
+      if (element) {
+        element.textContent = message;
+        element.style.display = message ? 'block' : 'none';
+      }
+    }
+    function displaySuccess(element, message) {
+      if (element) {
+        element.textContent = message;
+        element.style.display = message ? 'block' : 'none';
+      }
+    }
+    function clearMessages(...elements) {
+      elements.forEach(el => {
+        if (el) {
+          el.textContent = '';
+          el.style.display = 'none';
+        }
+      });
+    }
+
+    function generateGameCode(length = 5) {
+      const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let result = '';
+      for (let i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * characters.length));
+      }
+      return result;
+    }
+
+    function setActiveLeaderboardButton(activeButton) {
+      [leaderboardCityBtn, leaderboardStateBtn, leaderboardCountryBtn].forEach(btn => {
+        btn?.classList.remove('active');
+      });
+      activeButton?.classList.add('active');
+    }
+
+    // --- Auth / Profile Logic ---
+    async function checkUserSession() {
+      if (!supabaseClient) return;
+      try {
+        const { data: { session }, error } = await supabaseClient.auth.getSession();
+        if (error) throw error;
+
+        if (session && session.user) {
+          currentUser = session.user;
+          await fetchUserProfile(currentUser.id);
+          updateUIForLoggedInUser();
+          console.log('Session found:', currentUser.email);
+        } else {
+          currentUser = null;
+          userProfile = null;
+          updateUIForLoggedOutUser();
+          console.log('No active user session.');
+        }
+      } catch (err) {
+        console.error("Error checking user session:", err.message);
+        updateUIForLoggedOutUser();
+      }
+    }
+
+    async function fetchUserProfile(userId) {
+      if (!supabaseClient || !userId) {
+        console.log('Cannot fetch profile - missing client or userId');
+        userProfile = null;
+        return;
+      }
+      console.log(`Fetching profile for user ID: ${userId}`);
+      try {
+        const { data, error, status } = await supabaseClient
+          .from('profiles')
+          .select('username, city, state, rank_score')
+          .eq('id', userId)
+          .single();
+
+        if (error && status !== 406) {
+          console.error('Error fetching profile:', error);
+          throw error;
         }
 
-        // Initialize Supabase Client
-        let supabaseClient; // Use this variable for all Supabase interactions
-        try {
-             // Ensure the global 'supabase' object exists (from the CDN script)
-             if (typeof supabase === 'undefined' || !supabase.createClient) {
-                throw new Error("Supabase library not loaded correctly. Check the script tag.");
-             }
-             const { createClient } = supabase; // Destructure from global supabase
-             supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-             console.log('Supabase client initialized.');
-        } catch (error) {
-             console.error('Error initializing Supabase client:', error);
-             supabaseClient = null; // Ensure client is null on failure
-             alert(`Failed to connect to the backend: ${error.message}. Please ensure the Supabase URL and Key are correct and the service is running.`);
+        if (data) {
+          userProfile = data;
+          console.log('Profile fetched:', userProfile);
+        } else {
+          userProfile = null;
+          console.log('Profile not found for user ID:', userId);
         }
+        updateUserDisplay();
+      } catch (err) {
+        console.error('fetchUserProfile error:', err.message);
+        userProfile = null;
+        updateUserDisplay();
+      }
+    }
 
+    function updateUIForLoggedInUser() {
+      if(loginNavBtn) loginNavBtn.style.display = 'none';
+      if(signupNavBtn) signupNavBtn.style.display = 'none';
+      if(logoutBtn) logoutBtn.style.display = 'inline-block';
+      if(userDisplay) userDisplay.style.display = 'inline-block';
+      updateUserDisplay();
 
-        // --- Global Variables ---
-        let currentUser = null; // Store user data after login
-        let userProfile = null; // Store profile data (username, city, state, rank)
+      const createBtn = document.getElementById('nav-create-game');
+      const enterBtn = document.getElementById('nav-enter-game');
 
-        // --- DOM Elements ---
-        const pages = document.querySelectorAll('.page');
-        const appDiv = document.getElementById('app');
-        const authButtonsDiv = document.querySelector('.auth-buttons');
-        const loginNavBtn = document.getElementById('login-nav-btn');
-        const signupNavBtn = document.getElementById('signup-nav-btn');
-        const logoutBtn = document.getElementById('logout-btn');
-        const userDisplay = document.getElementById('user-display');
+      if (enterBtn) enterBtn.disabled = false;
+      if (createBtn) createBtn.disabled = !(userProfile && userProfile.city && userProfile.state);
 
-        // Form Elements
-        const loginForm = document.getElementById('login-form');
-        const signupForm = document.getElementById('signup-form');
-        const checkRankForm = document.getElementById('check-rank-form');
-        const enterGameForm = document.getElementById('enter-game-form');
-        const createGameForm = document.getElementById('create-game-form');
+      if (leaderboardCityBtn) leaderboardCityBtn.disabled = !(userProfile && userProfile.city);
+      if (leaderboardStateBtn) leaderboardStateBtn.disabled = !(userProfile && userProfile.state);
+    }
 
-        // Display Areas
-        const loginErrorDiv = document.getElementById('login-error');
-        const signupErrorDiv = document.getElementById('signup-error');
-        const signupSuccessDiv = document.getElementById('signup-success');
-        const rankErrorDiv = document.getElementById('rank-error');
-        const rankDisplayDiv = document.getElementById('rank-display');
-        const enterGameErrorDiv = document.getElementById('enter-game-error');
-        const enterGameSuccessDiv = document.getElementById('enter-game-success');
-        const createGameErrorDiv = document.getElementById('create-game-error');
-        const createGameSuccessDiv = document.getElementById('create-game-success');
-        const gameCodeDisplayDiv = document.getElementById('game-code-display');
-        const leaderboardLoadingDiv = document.getElementById('leaderboard-loading');
-        const leaderboardErrorDiv = document.getElementById('leaderboard-error');
-        const leaderboardDisplayDiv = document.getElementById('leaderboard-display');
-        const leaderboardUl = document.getElementById('leaderboard-ul');
-        const leaderboardTitle = document.getElementById('leaderboard-title');
-        const leaderboardCityBtn = document.getElementById('leaderboard-city-btn');
-        const leaderboardStateBtn = document.getElementById('leaderboard-state-btn');
-        const leaderboardCountryBtn = document.getElementById('leaderboard-country-btn');
-
-
-        // --- Utility Functions ---
-        function showPage(pageId) {
-            pages.forEach(page => {
-                page.classList.remove('active');
-            });
-            const targetPage = document.getElementById(pageId);
-            if (targetPage) {
-                targetPage.classList.add('active');
-                // Scroll to top of app container when changing page
-                if (appDiv) appDiv.scrollTop = 0; // Added check for appDiv
-                 // If navigating to leaderboard, trigger fetch
-                 if (pageId === 'leaderboard-page' && supabaseClient) { // Check if client is initialized
-                     fetchLeaderboard('country'); // Default to country
-                     setActiveLeaderboardButton(leaderboardCountryBtn);
-                 }
-            } else {
-                console.error(`Page with ID ${pageId} not found.`);
-                // Optionally show the home page as a fallback
-                 const homePage = document.getElementById('home-page');
-                 if (homePage) homePage.classList.add('active');
-            }
+    function updateUserDisplay() {
+      if (userDisplay) {
+        if (currentUser) {
+          // Show username if available, else email
+          userDisplay.textContent = userProfile?.username
+            ? `Hi, ${userProfile.username}`
+            : `Hi, ${currentUser.email}`;
+        } else {
+          userDisplay.textContent = '';
         }
+      }
+    }
 
-        function displayError(element, message) {
-            if (element) {
-                element.textContent = message;
-                element.style.display = message ? 'block' : 'none';
-            }
+    function updateUIForLoggedOutUser() {
+      if(loginNavBtn) loginNavBtn.style.display = 'inline-block';
+      if(signupNavBtn) signupNavBtn.style.display = 'inline-block';
+      if(logoutBtn) logoutBtn.style.display = 'none';
+      if(userDisplay) {
+        userDisplay.style.display = 'none';
+        userDisplay.textContent = '';
+      }
+      currentUser = null;
+      userProfile = null;
+
+      const createBtn = document.getElementById('nav-create-game');
+      const enterBtn = document.getElementById('nav-enter-game');
+      if (createBtn) createBtn.disabled = true;
+      if (enterBtn) enterBtn.disabled = true;
+      if (leaderboardCityBtn) leaderboardCityBtn.disabled = true;
+      if (leaderboardStateBtn) leaderboardStateBtn.disabled = true;
+
+      // If user is on protected pages, return to home
+      const activePage = document.querySelector('.page.active');
+      const protectedPages = ['create-game-page', 'enter-game-page'];
+      if (activePage && protectedPages.includes(activePage.id)) {
+        showPage('home-page');
+      }
+    }
+
+    async function handleLogout() {
+      if (!supabaseClient) return;
+      clearMessages(loginErrorDiv, signupErrorDiv, rankErrorDiv, enterGameErrorDiv, createGameErrorDiv, leaderboardErrorDiv);
+      try {
+        const { error } = await supabaseClient.auth.signOut();
+        if (error) throw error;
+        updateUIForLoggedOutUser();
+        showPage('home-page');
+        console.log('User logged out.');
+      } catch (err) {
+        console.error('Logout error:', err.message);
+        displayError(loginErrorDiv, 'Logout failed. Please try again.');
+      }
+    }
+
+    // --- Leaderboard ---
+    async function fetchLeaderboard(scope = 'country', city = null, state = null) {
+      if (!supabaseClient) return displayError(leaderboardErrorDiv, 'Backend error');
+      clearMessages(leaderboardErrorDiv);
+      if(leaderboardLoadingDiv) leaderboardLoadingDiv.style.display = 'block';
+      if(leaderboardUl) leaderboardUl.innerHTML = '';
+      if(leaderboardDisplayDiv) leaderboardDisplayDiv.style.display = 'none';
+
+      try {
+        let query = supabaseClient
+          .from('profiles')
+          .select('username, city, state, rank_score')
+          .not('username', 'is', null)
+          .order('rank_score', { ascending: false })
+          .limit(50);
+
+        let title = 'Leaderboard';
+        if (scope === 'city' && city && state) {
+          query = query.eq('city', city).eq('state', state);
+          title = `Leaderboard - ${city}, ${state}`;
+        } else if (scope === 'state' && state) {
+          query = query.eq('state', state);
+          title = `Leaderboard - ${state}`;
+        } else {
+          title = 'Leaderboard - Country';
         }
-         function displaySuccess(element, message) {
-            if (element) {
-                element.textContent = message;
-                element.style.display = message ? 'block' : 'none';
-            }
+        if(leaderboardTitle) leaderboardTitle.textContent = title;
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        if (data && data.length > 0 && leaderboardUl) {
+          leaderboardUl.innerHTML = data.map((profile, i) => `
+            <li>
+              <span class="rank">${i+1}.</span>
+              <span class="name">${profile.username}</span>
+              <span class="location">(${profile.city}, ${profile.state})</span>
+              <span class="score">${profile.rank_score} pts</span>
+            </li>
+          `).join('');
+          if(leaderboardDisplayDiv) leaderboardDisplayDiv.style.display = 'block';
+        } else if (leaderboardUl) {
+          leaderboardUl.innerHTML = '<li>No players found.</li>';
+          if(leaderboardDisplayDiv) leaderboardDisplayDiv.style.display = 'block';
         }
+      } catch (err) {
+        console.error('Leaderboard error:', err.message);
+        displayError(leaderboardErrorDiv, `Failed to load leaderboard: ${err.message}`);
+      } finally {
+        if(leaderboardLoadingDiv) leaderboardLoadingDiv.style.display = 'none';
+      }
+    }
 
-        function clearMessages(...elements) {
-             elements.forEach(el => {
-                 if (el) {
-                     el.textContent = '';
-                     el.style.display = 'none';
-                 }
-             });
+    // --- Event Listeners ---
+    document.getElementById('nav-create-game')?.addEventListener('click', () => showPage('create-game-page'));
+    document.getElementById('nav-enter-game')?.addEventListener('click', () => showPage('enter-game-page'));
+    document.getElementById('nav-check-rank')?.addEventListener('click', () => showPage('check-rank-page'));
+    document.getElementById('nav-leaderboard')?.addEventListener('click', () => showPage('leaderboard-page'));
+    loginNavBtn?.addEventListener('click', () => showPage('login-page'));
+    signupNavBtn?.addEventListener('click', () => showPage('signup-page'));
+    logoutBtn?.addEventListener('click', handleLogout);
+
+    document.getElementById('goto-signup')?.addEventListener('click', () => showPage('signup-page'));
+    document.getElementById('goto-login')?.addEventListener('click', () => showPage('login-page'));
+
+    document.querySelectorAll('.back-button').forEach(button => {
+      button.addEventListener('click', (e) => {
+        const targetPageId = e.target.getAttribute('data-target');
+        if (targetPageId) {
+          showPage(targetPageId);
+        } else {
+          showPage('home-page');
         }
+      });
+    });
 
+    leaderboardCityBtn?.addEventListener('click', () => {
+      if (userProfile && userProfile.city && supabaseClient) {
+        fetchLeaderboard('city', userProfile.city, userProfile.state);
+        setActiveLeaderboardButton(leaderboardCityBtn);
+      } else {
+        displayError(leaderboardErrorDiv, 'Need city/state in profile to show city leaderboard.');
+      }
+    });
+    leaderboardStateBtn?.addEventListener('click', () => {
+      if (userProfile && userProfile.state && supabaseClient) {
+        fetchLeaderboard('state', null, userProfile.state);
+        setActiveLeaderboardButton(leaderboardStateBtn);
+      } else {
+        displayError(leaderboardErrorDiv, 'Need state in profile to show state leaderboard.');
+      }
+    });
+    leaderboardCountryBtn?.addEventListener('click', () => {
+      if (supabaseClient) {
+        fetchLeaderboard('country');
+        setActiveLeaderboardButton(leaderboardCountryBtn);
+      }
+    });
 
-         // Simple client-side game code generator (Replace with secure server-side/Edge function if needed)
-        function generateGameCode(length = 5) {
-             const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-             let result = '';
-             for (let i = 0; i < length; i++) {
-                 result += characters.charAt(Math.floor(Math.random() * characters.length));
-             }
-             return result;
-         }
+    // --- Login Form ---
+    loginForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!supabaseClient) return displayError(loginErrorDiv, 'Backend not initialized.');
+      clearMessages(loginErrorDiv, signupErrorDiv, signupSuccessDiv);
 
-         function setActiveLeaderboardButton(activeButton) {
-             [leaderboardCityBtn, leaderboardStateBtn, leaderboardCountryBtn].forEach(btn => {
-                 if(btn) btn.classList.remove('active'); // Added null check
-             });
-             if (activeButton) {
-                 activeButton.classList.add('active');
-             }
-         }
+      const email = loginForm.username.value;
+      const password = loginForm.password.value;
+      console.log("Attempting signInWithPassword for:", email);
 
-        // --- Authentication & Profile Logic ---
-        async function checkUserSession() {
-            if (!supabaseClient) return; // Use the initialized client
-
-            try {
-                 const { data: { session }, error } = await supabaseClient.auth.getSession(); // Use client
-                 if (error) throw error;
-
-                 if (session && session.user) {
-                     currentUser = session.user;
-                     await fetchUserProfile(currentUser.id); // Fetch profile after getting user session
-                     updateUIForLoggedInUser();
-                     console.log('User session found:', currentUser.email);
-                 } else {
-                     currentUser = null;
-                     userProfile = null;
-                     updateUIForLoggedOutUser();
-                     console.log('No active user session.');
-                 }
-            } catch (error) {
-                 console.error("Error checking user session:", error.message);
-                 updateUIForLoggedOutUser(); // Default to logged out state on error
-            }
-        }
-
-        async function fetchUserProfile(userId) {
-            if (!supabaseClient || !userId) {
-                console.log('Cannot fetch profile - client or user ID missing');
-                userProfile = null; // Ensure profile is null if we can't fetch
-                return; // Use client and check userId
-            }
-            console.log(`Fetching profile for user ID: ${userId}`);
-            try {
-                const { data, error, status } = await supabaseClient // Use client
-                    .from('profiles')
-                    .select(`username, city, state, rank_score`)
-                    .eq('id', userId)
-                    .single(); // We expect only one profile per user
-
-                if (error && status !== 406) { // 406 means no rows found
-                    console.error('Error fetching profile data:', error);
-                    throw error;
-                }
-
-                if (data) {
-                    userProfile = data;
-                    console.log('User profile fetched successfully:', userProfile);
-                    updateUserDisplay(); // Update header display once profile is fetched
-                } else {
-                     userProfile = null;
-                     console.log('User profile data not found for ID:', userId, '(Maybe update pending?)');
-                     updateUserDisplay(); // Update display even if profile is null (will show email)
-                }
-            } catch (error) {
-                console.error('Error in fetchUserProfile function:', error.message);
-                userProfile = null;
-                updateUserDisplay(); // Ensure UI reflects missing profile
-            }
-        }
-
-
-        function updateUIForLoggedInUser() {
-            console.log('Updating UI for logged-in user. Profile:', userProfile);
-            if(loginNavBtn) loginNavBtn.style.display = 'none';
-            if(signupNavBtn) signupNavBtn.style.display = 'none';
-            if(logoutBtn) logoutBtn.style.display = 'inline-block';
-            if(userDisplay) userDisplay.style.display = 'inline-block';
-            updateUserDisplay(); // Call this to show email or username
-
-            // Enable features requiring login AND complete profile for game creation
-            const createBtn = document.getElementById('nav-create-game');
-            const enterBtn = document.getElementById('nav-enter-game');
-
-            if (enterBtn) enterBtn.disabled = false; // Can always enter game code if logged in
-
-            // Need profile with city/state to create game
-            if (createBtn) createBtn.disabled = !(userProfile && userProfile.city && userProfile.state);
-
-            // Adjust leaderboard buttons if profile loaded
-            if (leaderboardCityBtn) leaderboardCityBtn.disabled = !(userProfile && userProfile.city);
-            if (leaderboardStateBtn) leaderboardStateBtn.disabled = !(userProfile && userProfile.state);
-        }
-
-         function updateUserDisplay() {
-            // Use optional chaining and provide fallback
-             if (userDisplay) { // Check if element exists
-                 if (currentUser) {
-                    // If profile exists and has a username, show it. Otherwise fallback to email.
-                     userDisplay.textContent = userProfile?.username
-                                              ? `Hi, ${userProfile.username}`
-                                              : `Hi, ${currentUser.email}`;
-                 } else {
-                     userDisplay.textContent = '';
-                 }
-             }
-         }
-
-        function updateUIForLoggedOutUser() {
-            console.log('Updating UI for logged-out user.');
-             if(loginNavBtn) loginNavBtn.style.display = 'inline-block';
-             if(signupNavBtn) signupNavBtn.style.display = 'inline-block';
-             if(logoutBtn) logoutBtn.style.display = 'none';
-             if(userDisplay) userDisplay.style.display = 'none';
-             if(userDisplay) userDisplay.textContent = '';
-            currentUser = null;
-            userProfile = null;
-             // Disable features requiring login
-             const createBtn = document.getElementById('nav-create-game');
-             const enterBtn = document.getElementById('nav-enter-game');
-             if (createBtn) createBtn.disabled = true;
-             if (enterBtn) enterBtn.disabled = true;
-             if (leaderboardCityBtn) leaderboardCityBtn.disabled = true;
-             if (leaderboardStateBtn) leaderboardStateBtn.disabled = true;
-             // Redirect to home if on a protected page
-             const activePage = document.querySelector('.page.active');
-             const protectedPages = ['create-game-page', 'enter-game-page']; // Add others if needed
-             if (activePage && protectedPages.includes(activePage.id)) {
-                 showPage('home-page');
-             }
-        }
-
-        async function handleLogout() {
-            if (!supabaseClient) return; // Use client
-            clearMessages(loginErrorDiv, signupErrorDiv, rankErrorDiv, enterGameErrorDiv, createGameErrorDiv, leaderboardErrorDiv);
-            try {
-                const { error } = await supabaseClient.auth.signOut(); // Use client
-                if (error) throw error;
-                updateUIForLoggedOutUser();
-                showPage('home-page'); // Go to home after logout
-                console.log('User logged out successfully.');
-            } catch (error) {
-                console.error('Error logging out:', error.message);
-                displayError(loginErrorDiv, "Logout failed. Please try again.");
-            }
-        }
-
-
-        // --- Event Listeners ---
-
-        // Navigation Buttons (adding null checks for robustness)
-        document.getElementById('nav-create-game')?.addEventListener('click', () => showPage('create-game-page'));
-        document.getElementById('nav-enter-game')?.addEventListener('click', () => showPage('enter-game-page'));
-        document.getElementById('nav-check-rank')?.addEventListener('click', () => showPage('check-rank-page'));
-        document.getElementById('nav-leaderboard')?.addEventListener('click', () => showPage('leaderboard-page'));
-        loginNavBtn?.addEventListener('click', () => showPage('login-page'));
-        signupNavBtn?.addEventListener('click', () => showPage('signup-page'));
-        logoutBtn?.addEventListener('click', handleLogout);
-
-        document.getElementById('goto-signup')?.addEventListener('click', () => showPage('signup-page'));
-        document.getElementById('goto-login')?.addEventListener('click', () => showPage('login-page'));
-
-        // Back Buttons
-        document.querySelectorAll('.back-button').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const targetPageId = e.target.getAttribute('data-target');
-                if (targetPageId) {
-                    showPage(targetPageId);
-                } else {
-                    showPage('home-page'); // Default back target
-                }
-            });
+      try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+          email,
+          password,
         });
-
-
-         // Leaderboard View Buttons
-         leaderboardCityBtn?.addEventListener('click', () => {
-             if (userProfile && userProfile.city && supabaseClient) { // Use client
-                 fetchLeaderboard('city', userProfile.city, userProfile.state);
-                 setActiveLeaderboardButton(leaderboardCityBtn);
-             } else {
-                  displayError(leaderboardErrorDiv, 'Your location is needed to show city leaderboard. Ensure you are logged in and profile is complete.');
-             }
-         });
-         leaderboardStateBtn?.addEventListener('click', () => {
-              if (userProfile && userProfile.state && supabaseClient) { // Use client
-                 fetchLeaderboard('state', null, userProfile.state);
-                 setActiveLeaderboardButton(leaderboardStateBtn);
-              } else {
-                  displayError(leaderboardErrorDiv, 'Your location is needed to show state leaderboard. Ensure you are logged in and profile is complete.');
-              }
-         });
-         leaderboardCountryBtn?.addEventListener('click', () => {
-             if (supabaseClient) { // Use client
-                fetchLeaderboard('country');
-                setActiveLeaderboardButton(leaderboardCountryBtn);
-             }
-         });
-
-        // Login Form Submission
-        loginForm?.addEventListener('submit', async (e) => {
-             e.preventDefault();
-             if (!supabaseClient) return displayError(loginErrorDiv, 'Backend connection error.'); // Use client
-             clearMessages(loginErrorDiv, signupErrorDiv, signupSuccessDiv); // Clear errors and success from signup
-
-             const email = loginForm.username.value;
-             const password = loginForm.password.value;
-
-             try {
-                 const { data, error } = await supabaseClient.auth.signInWithPassword({ // Use client
-                     email: email,
-                     password: password,
-                 });
-
-                 if (error) throw error;
-
-                 // Login successful - session established
-                 // onAuthStateChange listener should handle fetching profile and updating UI
-                 loginForm.reset();
-                 showPage('home-page'); // Redirect to home after login
-
-             } catch (error) {
-                 console.error('Login error:', error.message);
-                 if (error.message.includes("Email not confirmed")) {
-                    displayError(loginErrorDiv, `Login failed: Please verify your email first.`);
-                 } else {
-                    displayError(loginErrorDiv, `Login failed: ${error.message}`);
-                 }
-             }
-        });
-
-        // Sign Up Form Submission
-        signupForm?.addEventListener('submit', async (e) => {
-            e.preventDefault();
-             if (!supabaseClient) return displayError(signupErrorDiv, 'Backend connection error.'); // Use client
-             clearMessages(signupErrorDiv, signupSuccessDiv, loginErrorDiv); // Clear messages
-
-            const username = signupForm.username.value.trim();
-            const email = signupForm.email.value.trim();
-            const password = signupForm.password.value;
-            const confirmPassword = signupForm.confirm_password.value;
-            const city = signupForm.city.value.trim();
-            const state = signupForm.state.value;
-
-            // --- Client-side Validation ---
-            if (password !== confirmPassword) {
-                return displayError(signupErrorDiv, 'Passwords do not match.');
-            }
-             if (!username || !email || !password || !city || !state) {
-                 return displayError(signupErrorDiv, 'All fields are required.');
-             }
-              if (password.length < 6) {
-                  return displayError(signupErrorDiv, 'Password must be at least 6 characters long.');
-              }
-             // --- End Validation ---
-
-
-            try {
-                 // 1. Sign up the user with Supabase Auth
-                 const { data: authData, error: authError } = await supabaseClient.auth.signUp({ // Use client
-                     email: email,
-                     password: password,
-                 });
-
-                 if (authError) throw new Error(`Auth signup failed: ${authError.message}`);
-                 if (!authData.user) throw new Error('Signup successful, but no user data returned from auth.');
-
-                  console.log('Auth signup successful, user ID:', authData.user.id);
-                  // The handle_new_user trigger runs here implicitly in the backend, creating the profile row with NULLs.
-
-                  // 2. Update the newly created profile row with the details.
-                  console.log(`Attempting to update profile for user ${authData.user.id} with username: ${username}, city: ${city}, state: ${state}`);
-                 const { data: updateData, error: profileError } = await supabaseClient // Use client
-                     .from('profiles')
-                     .update({
-                         username: username,
-                         city: city,
-                         state: state,
-                         updated_at: new Date() // Good practice to update this timestamp
-                     })
-                     .eq('id', authData.user.id)
-                     .select() // IMPORTANT: Select to confirm the update affected a row.
-                     .single(); // Ensures we expect exactly one row to be updated
-
-
-                 // Check if the update failed (e.g., row didn't exist or other DB error)
-                 if (profileError) {
-                      // Log the specific profile error
-                      console.error('Profile update database error:', profileError);
-                     // Note: Consider more robust handling - maybe delete the auth user? Complex.
-                     // For now, throw an error to show in the UI.
-                     throw new Error(`Account created, but failed to save profile details: ${profileError.message}. Ensure profile exists or check constraints.`);
-                 }
-
-                 if (!updateData) {
-                    // This case means the .update() succeeded but returned no data (maybe RLS issue preventing select?)
-                    // Or more likely, the .eq('id', authData.user.id) didn't find the row, which means the trigger might have failed silently earlier.
-                    console.error('Profile update seemed to succeed but returned no data. User ID:', authData.user.id);
-                    throw new Error('Account created, but profile details might not have saved correctly. Please try logging in or contact support.');
-                 }
-
-
-                 console.log('Profile update successful. Updated data:', updateData); // Confirmation log
-
-                 // Signup and profile update successful
-                 displaySuccess(signupSuccessDiv, 'Signup successful! Please check your email to verify your account, then log in.');
-                 signupForm.reset();
-                 // showPage('login-page'); // Optionally navigate to login
-
-             } catch (error) {
-                 console.error('Sign up process error:', error); // Log the full error object
-                 // Differentiate errors
-                 if (error.message.includes("User already registered")) {
-                    displayError(signupErrorDiv, "An account with this email already exists.");
-                 } else if (error.message.includes("duplicate key value violates unique constraint") && error.message.includes("profiles_username_key")) {
-                     // More specific check for username constraint
-                     displayError(signupErrorDiv, "This username is already taken. Please choose another.");
-                 } else {
-                     // Display the caught error message, which might come from the explicit throws above
-                     displayError(signupErrorDiv, `Signup failed: ${error.message}`);
-                 }
-             }
-        });
-
-
-        // Check Rank Form Submission
-        checkRankForm?.addEventListener('submit', async (e) => {
-             e.preventDefault();
-             if (!supabaseClient) return displayError(rankErrorDiv, 'Backend connection error.'); // Use client
-             clearMessages(rankErrorDiv);
-             if(rankDisplayDiv) rankDisplayDiv.innerHTML = ''; // Clear previous results
-
-             const usernameToCheck = checkRankForm.rank_username.value.trim();
-             if (!usernameToCheck) {
-                 return displayError(rankErrorDiv, 'Please enter a username.');
-             }
-
-             if(rankDisplayDiv) rankDisplayDiv.innerHTML = '<p>Checking...</p>';
-
-             try {
-                 const { data, error } = await supabaseClient // Use client
-                     .from('profiles')
-                     .select('username, city, state, rank_score')
-                     .eq('username', usernameToCheck)
-                     .single();
-
-                 if (error) {
-                     if (error.code === 'PGRST116') { // Not found code
-                         throw new Error(`Username '${usernameToCheck}' not found.`);
-                     } else {
-                        throw error; // Other DB errors
-                     }
-                 }
-
-                 if (data && rankDisplayDiv) {
-                     rankDisplayDiv.innerHTML = `
-                         <p><strong>Username:</strong> ${data.username}</p>
-                         <p><strong>Rank Score:</strong> ${data.rank_score}</p>
-                         <p><strong>Location:</strong> ${data.city}, ${data.state}</p>
-                     `;
-                 } else if (!data) {
-                      // Should be caught by PGRST116, but defensive check
-                      throw new Error(`Username '${usernameToCheck}' not found.`);
-                 }
-             } catch (error) {
-                 console.error('Check rank error:', error.message);
-                 displayError(rankErrorDiv, `Error: ${error.message}`);
-                 if (rankDisplayDiv) rankDisplayDiv.innerHTML = ''; // Clear 'Checking...'
-             }
-        });
-
-        // Enter Game Form Submission
-        enterGameForm?.addEventListener('submit', async (e) => {
-             e.preventDefault();
-              if (!supabaseClient) return displayError(enterGameErrorDiv, 'Backend connection error.'); // Use client
-              if (!currentUser) return displayError(enterGameErrorDiv, 'You must be logged in to enter a game.');
-             clearMessages(enterGameErrorDiv, enterGameSuccessDiv);
-
-             const gameCode = enterGameForm.game_code.value.trim().toUpperCase(); // Standardize code format
-             if (!gameCode) {
-                 return displayError(enterGameErrorDiv, 'Please enter a game code.');
-             }
-
-             try {
-                 // Placeholder: Find game, check status
-                 const { data: gameData, error: gameError } = await supabaseClient // Use client
-                     .from('games')
-                     .select('id, status, game_type')
-                     .eq('game_code', gameCode)
-                     .in('status', ['pending', 'active']) // Only find joinable games
-                     .single();
-
-                 if (gameError || !gameData) {
-                      // Handle not found or other errors
-                      if (gameError?.code === 'PGRST116') {
-                          throw new Error(`Game code '${gameCode}' not found or is inactive.`);
-                      } else {
-                          throw new Error(`Error finding game: ${gameError?.message || 'Unknown error'}`);
-                      }
-                 }
-
-                 // --- Optional: Add logic to add user to game_participants table ---
-                 /*
-                 console.log(`Attempting to add user ${currentUser.id} to game ${gameData.id}`);
-                 const { error: participantError } = await supabaseClient // Use client
-                     .from('game_participants')
-                     .insert({ game_id: gameData.id, user_id: currentUser.id });
-
-                 if (participantError) {
-                     // Handle potential errors like already being in the game (duplicate key)
-                     if (participantError.code === '23505') { // unique_violation
-                         displaySuccess(enterGameSuccessDiv, `You are already part of game ${gameCode}.`);
-                     } else {
-                         console.error("Error joining game:", participantError);
-                         throw new Error(`Failed to join game: ${participantError.message}`);
-                     }
-                 } else {
-                      console.log("Successfully joined game.");
-                      displaySuccess(enterGameSuccessDiv, `Successfully joined game ${gameCode} (${gameData.game_type})!`);
-                 }
-                 */
-                 // --- End Optional Participant Logic ---
-
-                  // For now, just confirm the code is valid (if participant logic is commented out)
-                 displaySuccess(enterGameSuccessDiv, `Game code ${gameCode} (${gameData.game_type}) is valid. Joining functionality placeholder.`);
-                 enterGameForm.reset();
-
-
-             } catch (error) {
-                 console.error('Enter game error:', error.message);
-                 displayError(enterGameErrorDiv, `Error: ${error.message}`);
-             }
-        });
-
-        // Create Game Form Submission
-        createGameForm?.addEventListener('submit', async (e) => {
-             e.preventDefault();
-             if (!supabaseClient) return displayError(createGameErrorDiv, 'Backend connection error.'); // Use client
-             // Check for user AND complete profile
-             if (!currentUser || !userProfile || !userProfile.city || !userProfile.state) {
-                 return displayError(createGameErrorDiv, 'You must be logged in with a complete profile (city/state) to create a game.');
-             }
-             clearMessages(createGameErrorDiv, createGameSuccessDiv);
-             if(gameCodeDisplayDiv) gameCodeDisplayDiv.textContent = ''; // Clear previous code
-
-             const selectedGameType = createGameForm.querySelector('input[name="game_type"]:checked');
-             if (!selectedGameType) {
-                 return displayError(createGameErrorDiv, 'Please select a game type.');
-             }
-             const gameType = selectedGameType.value;
-             const newGameCode = generateGameCode(5); // Use simple client-side generation for now
-
-             try {
-                 // Profile city/state already validated above
-                 console.log(`Creating game with type: ${gameType}, code: ${newGameCode} by user ${currentUser.id} in ${userProfile.city}, ${userProfile.state}`);
-                 const { data, error } = await supabaseClient // Use client
-                     .from('games')
-                     .insert({
-                         game_code: newGameCode,
-                         game_type: gameType,
-                         creator_id: currentUser.id,
-                         city: userProfile.city, // Use creator's city/state
-                         state: userProfile.state
-                         // Status defaults to 'pending' via table definition
-                     })
-                     .select() // Return the created record
-                     .single(); // Expecting one record back
-
-                 if (error) {
-                     // Handle potential errors (e.g., duplicate game_code if client-gen clashes)
-                      if (error.message.includes('duplicate key value violates unique constraint "games_game_code_key"')) {
-                          // Very unlikely with random generation, but handle it
-                          throw new Error("Failed to generate a unique game code. Please try again.");
-                      } else {
-                          console.error("Error inserting game:", error);
-                          throw error; // Rethrow other DB errors
-                      }
-                 }
-
-                 if (data) {
-                    console.log("Game created successfully:", data);
-                    if(gameCodeDisplayDiv) gameCodeDisplayDiv.textContent = `Game Created! Code: ${data.game_code}`;
-                    displaySuccess(createGameSuccessDiv, `Game created successfully.`);
-                    createGameForm.reset(); // Reset the form
-                 } else {
-                    // Should not happen if insert succeeds and select works, but safeguard
-                    throw new Error("Game creation failed unexpectedly. No data returned.");
-                 }
-
-             } catch (error) {
-                 console.error('Create game error:', error.message);
-                 displayError(createGameErrorDiv, `Error: ${error.message}`);
-             }
-        });
-
-
-        // --- Leaderboard Fetching ---
-         async function fetchLeaderboard(scope = 'country', city = null, state = null) {
-             if (!supabaseClient) return displayError(leaderboardErrorDiv, 'Backend connection error.'); // Use client
-
-             clearMessages(leaderboardErrorDiv);
-             if(leaderboardLoadingDiv) leaderboardLoadingDiv.style.display = 'block';
-             if(leaderboardUl) leaderboardUl.innerHTML = '';
-             if(leaderboardDisplayDiv) leaderboardDisplayDiv.style.display = 'none';
-
-             console.log(`Fetching leaderboard - Scope: ${scope}, City: ${city}, State: ${state}`);
-
-             try {
-                 let query = supabaseClient // Use client
-                     .from('profiles')
-                     .select('username, city, state, rank_score')
-                     .not('username', 'is', null) // Exclude profiles where username hasn't been set yet
-                     .order('rank_score', { ascending: false }) // Highest rank first
-                     .limit(50); // Limit results for performance
-
-                 let title = 'Leaderboard';
-
-                 if (scope === 'city' && city && state) {
-                     query = query.eq('city', city).eq('state', state);
-                     title = `Leaderboard - ${city}, ${state}`;
-                 } else if (scope === 'state' && state) {
-                     query = query.eq('state', state);
-                     title = `Leaderboard - ${state}`;
-                 } else {
-                     scope = 'country'; // Default or fallback
-                     title = `Leaderboard - Country`;
-                 }
-
-                 if(leaderboardTitle) leaderboardTitle.textContent = title;
-
-                 const { data, error } = await query;
-
-                 if (error) throw error;
-
-                 if (data && data.length > 0 && leaderboardUl) {
-                    console.log(`Leaderboard data received (${data.length} players)`);
-                     leaderboardUl.innerHTML = data.map((profile, index) => `
-                         <li>
-                             <span class="rank">${index + 1}.</span>
-                             <span class="name">${profile.username}</span>
-                             <span class="location">(${profile.city}, ${profile.state})</span>
-                             <span class="score">${profile.rank_score} pts</span>
-                         </li>
-                     `).join('');
-                     if(leaderboardDisplayDiv) leaderboardDisplayDiv.style.display = 'block';
-                 } else if (leaderboardUl) {
-                    console.log('No players found for this leaderboard scope.');
-                     leaderboardUl.innerHTML = '<li>No players found for this scope.</li>';
-                      if(leaderboardDisplayDiv) leaderboardDisplayDiv.style.display = 'block';
-                 }
-
-             } catch (error) {
-                 console.error('Error fetching leaderboard:', error.message);
-                 displayError(leaderboardErrorDiv, `Failed to load leaderboard: ${error.message}`);
-             } finally {
-                 if(leaderboardLoadingDiv) leaderboardLoadingDiv.style.display = 'none';
-             }
-         }
-
-
-        // --- Initial Load ---
-         document.addEventListener('DOMContentLoaded', () => {
-             console.log('DOM fully loaded.');
-             // Only proceed if Supabase client was successfully initialized
-             if (supabaseClient) {
-                 showPage('home-page'); // Start on the home page
-                 checkUserSession(); // Check if user is logged in on load
-             } else {
-                 // Show an error or minimal state if Supabase failed to load
-                 console.error("Supabase client failed to initialize. App functionality will be limited.");
-                 updateUIForLoggedOutUser(); // Ensure UI is in logged-out state
-                 displayError(document.getElementById('login-error'), "Cannot connect to backend service."); // Show a generic error
-                 showPage('login-page'); // Show login page but it won't work
-             }
-         });
-
-         // Listen for Supabase auth state changes (only if client is valid)
-         if (supabaseClient) {
-             supabaseClient.auth.onAuthStateChange(async (event, session) => { // Add async
-                 console.log('Auth state changed:', event, session);
-
-                 if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
-                    if (session && session.user) {
-                         currentUser = session.user;
-                         // *** CRITICAL: Re-fetch profile AFTER state change ***
-                         await fetchUserProfile(currentUser.id); // Wait for profile fetch
-                         updateUIForLoggedInUser(); // Update UI with potentially new profile data
-                         // Optional: Redirect to home page if they landed on login/signup after verification
-                         const activePageId = document.querySelector('.page.active')?.id;
-                         if (activePageId === 'login-page' || activePageId === 'signup-page') {
-                             showPage('home-page');
-                         }
-                         console.log('onAuthStateChange processed SIGNED_IN/USER_UPDATED');
-                    } else {
-                        // Handle case where event is SIGNED_IN but session is null (shouldn't happen often)
-                        console.warn('SIGNED_IN event received but session is null.');
-                        updateUIForLoggedOutUser();
-                    }
-                 } else if (event === 'SIGNED_OUT') {
-                     updateUIForLoggedOutUser();
-                     // Optional: Force redirect to home on logout
-                      showPage('home-page');
-                      console.log('onAuthStateChange processed SIGNED_OUT');
-                 } else if (event === 'INITIAL_SESSION') {
-                    // Already handled by initial checkUserSession call, log for debugging
-                     console.log('Initial session event received - profile fetch handled by checkUserSession.');
-                     // Avoid redundant fetch/UI update here unless checkUserSession failed?
-                 }
-                 // Add other events if needed (e.g., PASSWORD_RECOVERY)
-             });
-         } else {
-            console.warn("Supabase client not available, cannot listen for auth state changes.");
-            // Initial DOMContentLoaded handles the UI state already if client is null
-         }
-
-
-    </script>
-
+        if (error) {
+          console.error("SignIn error:", error);
+          throw error;
+        }
+        console.log("SignIn success. Data:", data);
+        loginForm.reset();
+        showPage('home-page');
+      } catch (err) {
+        console.error('Login error:', err.message);
+        displayError(loginErrorDiv, `Login failed: ${err.message}`);
+      }
+    });
+
+    // --- Sign Up Form ---
+    signupForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!supabaseClient) return displayError(signupErrorDiv, 'Backend not initialized.');
+      clearMessages(signupErrorDiv, signupSuccessDiv, loginErrorDiv);
+
+      const username = signupForm.username.value.trim();
+      const email = signupForm.email.value.trim();
+      const password = signupForm.password.value;
+      const confirmPassword = signupForm.confirm_password.value;
+      const city = signupForm.city.value.trim();
+      const state = signupForm.state.value;
+
+      if (password !== confirmPassword) {
+        return displayError(signupErrorDiv, 'Passwords do not match.');
+      }
+      if (!username || !email || !password || !city || !state) {
+        return displayError(signupErrorDiv, 'All fields are required.');
+      }
+      if (password.length < 6) {
+        return displayError(signupErrorDiv, 'Password must be at least 6 characters.');
+      }
+
+      try {
+        // 1. Sign up
+        const { data: authData, error: authError } = await supabaseClient.auth.signUp({ email, password });
+        if (authError) throw new Error(`SignUp failed: ${authError.message}`);
+        if (!authData.user) throw new Error('Signup successful, but no user returned.');
+
+        console.log('Signup successful. New user ID:', authData.user.id);
+
+        // 2. Update profile
+        const { data: updateData, error: profileError } = await supabaseClient
+          .from('profiles')
+          .update({
+            username,
+            city,
+            state,
+            updated_at: new Date()
+          })
+          .eq('id', authData.user.id)
+          .select()
+          .single();
+
+        if (profileError) {
+          console.error('Profile update error:', profileError);
+          throw new Error(`Account created, but failed to save profile: ${profileError.message}`);
+        }
+        if (!updateData) {
+          console.error('No profile data returned. Possibly RLS or missing row.');
+          throw new Error('Profile row not updated. Check your RLS or triggers.');
+        }
+
+        console.log('Profile updated:', updateData);
+        displaySuccess(signupSuccessDiv, 'Signup successful! You can now log in.');
+        signupForm.reset();
+        // Optionally show login page: showPage('login-page');
+      } catch (err) {
+        console.error('Sign up error:', err);
+        if (err.message.includes("duplicate key value") && err.message.includes("profiles_username_key")) {
+          displayError(signupErrorDiv, "That username is already taken.");
+        } else {
+          displayError(signupErrorDiv, `Signup failed: ${err.message}`);
+        }
+      }
+    });
+
+    // --- Check Rank ---
+    checkRankForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!supabaseClient) return displayError(rankErrorDiv, 'Backend not initialized.');
+      clearMessages(rankErrorDiv);
+      rankDisplayDiv.innerHTML = '<p>Checking...</p>';
+
+      const usernameToCheck = checkRankForm.rank_username.value.trim();
+      if (!usernameToCheck) {
+        return displayError(rankErrorDiv, 'Please enter a username.');
+      }
+
+      try {
+        const { data, error } = await supabaseClient
+          .from('profiles')
+          .select('username, city, state, rank_score')
+          .eq('username', usernameToCheck)
+          .single();
+
+        if (error) {
+          console.error('Rank check error:', error);
+          throw new Error(error.message.includes('PGRST116') ?
+            `Username '${usernameToCheck}' not found.` :
+            error.message
+          );
+        }
+
+        if (data) {
+          rankDisplayDiv.innerHTML = `
+            <p><strong>Username:</strong> ${data.username}</p>
+            <p><strong>Rank Score:</strong> ${data.rank_score}</p>
+            <p><strong>Location:</strong> ${data.city}, ${data.state}</p>
+          `;
+        } else {
+          rankDisplayDiv.innerHTML = `<p>Username '${usernameToCheck}' not found.</p>`;
+        }
+      } catch (err) {
+        console.error('Check rank error:', err.message);
+        displayError(rankErrorDiv, err.message);
+        rankDisplayDiv.innerHTML = '';
+      }
+    });
+
+    // --- Enter Game ---
+    enterGameForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!supabaseClient) return displayError(enterGameErrorDiv, 'Backend not initialized.');
+      if (!currentUser) return displayError(enterGameErrorDiv, 'You must be logged in to enter a game.');
+      clearMessages(enterGameErrorDiv, enterGameSuccessDiv);
+
+      const gameCode = enterGameForm.game_code.value.trim().toUpperCase();
+      if (!gameCode) {
+        return displayError(enterGameErrorDiv, 'Please enter a game code.');
+      }
+
+      try {
+        const { data: gameData, error: gameError } = await supabaseClient
+          .from('games')
+          .select('id, status, game_type')
+          .eq('game_code', gameCode)
+          .in('status', ['pending','active'])
+          .single();
+
+        if (gameError || !gameData) {
+          throw new Error(gameError?.code === 'PGRST116'
+            ? `Game code '${gameCode}' not found or inactive.`
+            : `Error finding game: ${gameError?.message || 'Unknown'}`);
+        }
+
+        displaySuccess(enterGameSuccessDiv, `Game code ${gameCode} (${gameData.game_type}) is valid.`);
+        enterGameForm.reset();
+      } catch (err) {
+        console.error('Enter game error:', err.message);
+        displayError(enterGameErrorDiv, `Error: ${err.message}`);
+      }
+    });
+
+    // --- Create Game ---
+    createGameForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!supabaseClient) return displayError(createGameErrorDiv, 'Backend not initialized.');
+      if (!currentUser || !userProfile || !userProfile.city || !userProfile.state) {
+        return displayError(createGameErrorDiv, 'Must be logged in with city/state to create a game.');
+      }
+      clearMessages(createGameErrorDiv, createGameSuccessDiv);
+      gameCodeDisplayDiv.textContent = '';
+
+      const selectedGameType = createGameForm.querySelector('input[name="game_type"]:checked');
+      if (!selectedGameType) {
+        return displayError(createGameErrorDiv, 'Please select a game type.');
+      }
+      const gameType = selectedGameType.value;
+      const newGameCode = generateGameCode(5);
+
+      try {
+        const { data, error } = await supabaseClient
+          .from('games')
+          .insert({
+            game_code: newGameCode,
+            game_type: gameType,
+            creator_id: currentUser.id,
+            city: userProfile.city,
+            state: userProfile.state
+          })
+          .select()
+          .single();
+
+        if (error) {
+          if (error.message.includes('duplicate key value violates unique constraint')) {
+            throw new Error("Failed to generate unique game code. Try again.");
+          }
+          throw error;
+        }
+        if (data) {
+          gameCodeDisplayDiv.textContent = `Game Created! Code: ${data.game_code}`;
+          displaySuccess(createGameSuccessDiv, 'Game created successfully.');
+          createGameForm.reset();
+        } else {
+          throw new Error("Game creation failed unexpectedly. No data returned.");
+        }
+      } catch (err) {
+        console.error('Create game error:', err.message);
+        displayError(createGameErrorDiv, `Error: ${err.message}`);
+      }
+    });
+
+    // --- Initial Load ---
+    document.addEventListener('DOMContentLoaded', async () => {
+      console.log('DOM fully loaded.');
+
+      if (supabaseClient) {
+        // Uncomment the line below if you suspect a leftover session is causing double SIGNED_IN events:
+        // await supabaseClient.auth.signOut();
+
+        showPage('home-page');
+        await checkUserSession();
+      } else {
+        console.error("Supabase client not available. App will be limited.");
+        updateUIForLoggedOutUser();
+        displayError(loginErrorDiv, "Cannot connect to backend.");
+        showPage('login-page');
+      }
+    });
+
+    // --- onAuthStateChange ---
+    if (supabaseClient) {
+      supabaseClient.auth.onAuthStateChange(async (event, session) => {
+        console.log('Auth state changed:', event, session);
+        if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
+          currentUser = session.user;
+          await fetchUserProfile(currentUser.id);
+          updateUIForLoggedInUser();
+          // If on login or signup page, go home
+          const activePageId = document.querySelector('.page.active')?.id;
+          if (activePageId === 'login-page' || activePageId === 'signup-page') {
+            showPage('home-page');
+          }
+        } else if (event === 'SIGNED_OUT') {
+          updateUIForLoggedOutUser();
+          showPage('home-page');
+        }
+      });
+    }
+  </script>
 </body>
 </html>
