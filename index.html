@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Court - Basketball Game Organizer</title>
+    <title>Court</title>
     <!-- Load Supabase Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -132,11 +132,15 @@
             transition: background-color 0.3s ease, transform 0.1s ease;
             display: inline-block; /* Allow margin auto to work */
         }
+        button:disabled {
+             background-color: #ccc;
+             cursor: not-allowed;
+        }
 
-        button:hover {
+        button:hover:not(:disabled) {
             background-color: #333;
         }
-        button:active {
+        button:active:not(:disabled) {
             transform: scale(0.98);
         }
 
@@ -236,12 +240,16 @@
             border-bottom: 1px solid #eee;
             display: flex;
             justify-content: space-between;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            gap: 5px; /* Space between wrapped items */
           }
           #leaderboard-page .leaderboard-list li:last-child {
             border-bottom: none;
           }
           #leaderboard-page .leaderboard-list .rank { font-weight: bold; margin-right: 10px;}
-          #leaderboard-page .leaderboard-list .score { font-style: italic; color: #555;}
+          #leaderboard-page .leaderboard-list .name { flex-grow: 1; text-align: left; }
+          #leaderboard-page .leaderboard-list .location { font-size: 0.9em; color: #555; }
+          #leaderboard-page .leaderboard-list .score { font-style: italic; color: #555; margin-left: 10px; }
 
           #leaderboard-page .leaderboard-controls {
             margin-bottom: 15px;
@@ -258,6 +266,11 @@
                 background-color: #000;
                 color: #fff;
             }
+             #leaderboard-page .leaderboard-controls button:disabled {
+                 background-color: #f8f9fa;
+                 color: #aaa;
+                 cursor: not-allowed;
+            }
 
 
         /* Form feedback/error messages */
@@ -267,6 +280,7 @@
             margin-top: -10px;
             margin-bottom: 10px;
             text-align: center;
+            display: none; /* Hidden by default */
         }
          .success-message {
             color: #28a745;
@@ -274,6 +288,7 @@
             margin-top: 10px;
             margin-bottom: 10px;
             text-align: center;
+            display: none; /* Hidden by default */
          }
 
 
@@ -596,8 +611,14 @@
         }
 
         function clearMessages(...elements) {
-            elements.forEach(el => displayError(el, ''));
+             elements.forEach(el => {
+                 if (el) {
+                     el.textContent = '';
+                     el.style.display = 'none';
+                 }
+             });
         }
+
 
          // Simple client-side game code generator (Replace with secure server-side/Edge function if needed)
         function generateGameCode(length = 5) {
@@ -628,7 +649,7 @@
 
                  if (session && session.user) {
                      currentUser = session.user;
-                     await fetchUserProfile(currentUser.id); // Fetch profile after getting user
+                     await fetchUserProfile(currentUser.id); // Fetch profile after getting user session
                      updateUIForLoggedInUser();
                      console.log('User session found:', currentUser.email);
                  } else {
@@ -644,7 +665,12 @@
         }
 
         async function fetchUserProfile(userId) {
-            if (!supabaseClient || !userId) return; // Use client
+            if (!supabaseClient || !userId) {
+                console.log('Cannot fetch profile - client or user ID missing');
+                userProfile = null; // Ensure profile is null if we can't fetch
+                return; // Use client and check userId
+            }
+            console.log(`Fetching profile for user ID: ${userId}`);
             try {
                 const { data, error, status } = await supabaseClient // Use client
                     .from('profiles')
@@ -653,44 +679,57 @@
                     .single(); // We expect only one profile per user
 
                 if (error && status !== 406) { // 406 means no rows found
+                    console.error('Error fetching profile data:', error);
                     throw error;
                 }
 
                 if (data) {
                     userProfile = data;
-                    console.log('User profile fetched:', userProfile);
+                    console.log('User profile fetched successfully:', userProfile);
                     updateUserDisplay(); // Update header display once profile is fetched
                 } else {
                      userProfile = null;
-                     console.log('User profile not found for ID:', userId);
+                     console.log('User profile data not found for ID:', userId, '(Maybe update pending?)');
+                     updateUserDisplay(); // Update display even if profile is null (will show email)
                 }
             } catch (error) {
-                console.error('Error fetching user profile:', error.message);
+                console.error('Error in fetchUserProfile function:', error.message);
                 userProfile = null;
+                updateUserDisplay(); // Ensure UI reflects missing profile
             }
         }
 
 
         function updateUIForLoggedInUser() {
+            console.log('Updating UI for logged-in user. Profile:', userProfile);
             if(loginNavBtn) loginNavBtn.style.display = 'none';
             if(signupNavBtn) signupNavBtn.style.display = 'none';
             if(logoutBtn) logoutBtn.style.display = 'inline-block';
             if(userDisplay) userDisplay.style.display = 'inline-block';
-            updateUserDisplay(); // Call this to potentially show email first, then username
-             // Enable features requiring login
-             const createBtn = document.getElementById('nav-create-game');
-             const enterBtn = document.getElementById('nav-enter-game');
-             if (createBtn) createBtn.disabled = false;
-             if (enterBtn) enterBtn.disabled = false;
-             // Adjust leaderboard buttons if profile loaded
-             if (leaderboardCityBtn) leaderboardCityBtn.disabled = !userProfile;
-             if (leaderboardStateBtn) leaderboardStateBtn.disabled = !userProfile;
+            updateUserDisplay(); // Call this to show email or username
+
+            // Enable features requiring login AND complete profile for game creation
+            const createBtn = document.getElementById('nav-create-game');
+            const enterBtn = document.getElementById('nav-enter-game');
+
+            if (enterBtn) enterBtn.disabled = false; // Can always enter game code if logged in
+
+            // Need profile with city/state to create game
+            if (createBtn) createBtn.disabled = !(userProfile && userProfile.city && userProfile.state);
+
+            // Adjust leaderboard buttons if profile loaded
+            if (leaderboardCityBtn) leaderboardCityBtn.disabled = !(userProfile && userProfile.city);
+            if (leaderboardStateBtn) leaderboardStateBtn.disabled = !(userProfile && userProfile.state);
         }
 
          function updateUserDisplay() {
+            // Use optional chaining and provide fallback
              if (userDisplay) { // Check if element exists
                  if (currentUser) {
-                     userDisplay.textContent = userProfile ? `Hi, ${userProfile.username}` : `Hi, ${currentUser.email}`;
+                    // If profile exists and has a username, show it. Otherwise fallback to email.
+                     userDisplay.textContent = userProfile?.username
+                                              ? `Hi, ${userProfile.username}`
+                                              : `Hi, ${currentUser.email}`;
                  } else {
                      userDisplay.textContent = '';
                  }
@@ -698,6 +737,7 @@
          }
 
         function updateUIForLoggedOutUser() {
+            console.log('Updating UI for logged-out user.');
              if(loginNavBtn) loginNavBtn.style.display = 'inline-block';
              if(signupNavBtn) signupNavBtn.style.display = 'inline-block';
              if(logoutBtn) logoutBtn.style.display = 'none';
@@ -728,7 +768,7 @@
                 if (error) throw error;
                 updateUIForLoggedOutUser();
                 showPage('home-page'); // Go to home after logout
-                console.log('User logged out.');
+                console.log('User logged out successfully.');
             } catch (error) {
                 console.error('Error logging out:', error.message);
                 displayError(loginErrorDiv, "Logout failed. Please try again.");
@@ -769,7 +809,7 @@
                  fetchLeaderboard('city', userProfile.city, userProfile.state);
                  setActiveLeaderboardButton(leaderboardCityBtn);
              } else {
-                  displayError(leaderboardErrorDiv, 'Your location is needed to show city leaderboard. Ensure you are logged in.');
+                  displayError(leaderboardErrorDiv, 'Your location is needed to show city leaderboard. Ensure you are logged in and profile is complete.');
              }
          });
          leaderboardStateBtn?.addEventListener('click', () => {
@@ -777,7 +817,7 @@
                  fetchLeaderboard('state', null, userProfile.state);
                  setActiveLeaderboardButton(leaderboardStateBtn);
               } else {
-                  displayError(leaderboardErrorDiv, 'Your location is needed to show state leaderboard. Ensure you are logged in.');
+                  displayError(leaderboardErrorDiv, 'Your location is needed to show state leaderboard. Ensure you are logged in and profile is complete.');
               }
          });
          leaderboardCountryBtn?.addEventListener('click', () => {
@@ -791,7 +831,7 @@
         loginForm?.addEventListener('submit', async (e) => {
              e.preventDefault();
              if (!supabaseClient) return displayError(loginErrorDiv, 'Backend connection error.'); // Use client
-             clearMessages(loginErrorDiv, signupErrorDiv); // Clear errors
+             clearMessages(loginErrorDiv, signupErrorDiv, signupSuccessDiv); // Clear errors and success from signup
 
              const email = loginForm.username.value;
              const password = loginForm.password.value;
@@ -804,16 +844,18 @@
 
                  if (error) throw error;
 
-                 // Login successful
-                 currentUser = data.user;
-                 await fetchUserProfile(currentUser.id); // Fetch profile immediately
-                 updateUIForLoggedInUser();
+                 // Login successful - session established
+                 // onAuthStateChange listener should handle fetching profile and updating UI
                  loginForm.reset();
                  showPage('home-page'); // Redirect to home after login
 
              } catch (error) {
                  console.error('Login error:', error.message);
-                 displayError(loginErrorDiv, `Login failed: ${error.message}`);
+                 if (error.message.includes("Email not confirmed")) {
+                    displayError(loginErrorDiv, `Login failed: Please verify your email first.`);
+                 } else {
+                    displayError(loginErrorDiv, `Login failed: ${error.message}`);
+                 }
              }
         });
 
@@ -830,6 +872,7 @@
             const city = signupForm.city.value.trim();
             const state = signupForm.state.value;
 
+            // --- Client-side Validation ---
             if (password !== confirmPassword) {
                 return displayError(signupErrorDiv, 'Passwords do not match.');
             }
@@ -839,6 +882,8 @@
               if (password.length < 6) {
                   return displayError(signupErrorDiv, 'Password must be at least 6 characters long.');
               }
+             // --- End Validation ---
+
 
             try {
                  // 1. Sign up the user with Supabase Auth
@@ -848,43 +893,65 @@
                  });
 
                  if (authError) throw new Error(`Auth signup failed: ${authError.message}`);
-                 if (!authData.user) throw new Error('Signup successful, but no user data returned.');
+                 if (!authData.user) throw new Error('Signup successful, but no user data returned from auth.');
 
                   console.log('Auth signup successful, user ID:', authData.user.id);
+                  // The handle_new_user trigger runs here implicitly in the backend, creating the profile row with NULLs.
 
-                  // 2. The handle_new_user trigger should create a basic profile row.
-                  // Now, update that profile row with the additional details.
-                  await new Promise(resolve => setTimeout(resolve, 500)); // Small delay for trigger
-
-                 const { error: profileError } = await supabaseClient // Use client
+                  // 2. Update the newly created profile row with the details.
+                  console.log(`Attempting to update profile for user ${authData.user.id} with username: ${username}, city: ${city}, state: ${state}`);
+                 const { data: updateData, error: profileError } = await supabaseClient // Use client
                      .from('profiles')
                      .update({
                          username: username,
                          city: city,
                          state: state,
-                         updated_at: new Date()
+                         updated_at: new Date() // Good practice to update this timestamp
                      })
-                     .eq('id', authData.user.id);
+                     .eq('id', authData.user.id)
+                     .select() // IMPORTANT: Select to confirm the update affected a row.
+                     .single(); // Ensures we expect exactly one row to be updated
 
+
+                 // Check if the update failed (e.g., row didn't exist or other DB error)
                  if (profileError) {
-                     throw new Error(`Profile update failed: ${profileError.message}. Username might be taken.`);
+                      // Log the specific profile error
+                      console.error('Profile update database error:', profileError);
+                     // Note: Consider more robust handling - maybe delete the auth user? Complex.
+                     // For now, throw an error to show in the UI.
+                     throw new Error(`Account created, but failed to save profile details: ${profileError.message}. Ensure profile exists or check constraints.`);
                  }
 
-                 // Signup successful
+                 if (!updateData) {
+                    // This case means the .update() succeeded but returned no data (maybe RLS issue preventing select?)
+                    // Or more likely, the .eq('id', authData.user.id) didn't find the row, which means the trigger might have failed silently earlier.
+                    console.error('Profile update seemed to succeed but returned no data. User ID:', authData.user.id);
+                    throw new Error('Account created, but profile details might not have saved correctly. Please try logging in or contact support.');
+                 }
+
+
+                 console.log('Profile update successful. Updated data:', updateData); // Confirmation log
+
+                 // Signup and profile update successful
                  displaySuccess(signupSuccessDiv, 'Signup successful! Please check your email to verify your account, then log in.');
                  signupForm.reset();
+                 // showPage('login-page'); // Optionally navigate to login
 
              } catch (error) {
-                 console.error('Sign up error:', error.message);
+                 console.error('Sign up process error:', error); // Log the full error object
+                 // Differentiate errors
                  if (error.message.includes("User already registered")) {
                     displayError(signupErrorDiv, "An account with this email already exists.");
-                 } else if (error.message.includes("duplicate key value violates unique constraint")) {
+                 } else if (error.message.includes("duplicate key value violates unique constraint") && error.message.includes("profiles_username_key")) {
+                     // More specific check for username constraint
                      displayError(signupErrorDiv, "This username is already taken. Please choose another.");
                  } else {
+                     // Display the caught error message, which might come from the explicit throws above
                      displayError(signupErrorDiv, `Signup failed: ${error.message}`);
                  }
              }
         });
+
 
         // Check Rank Form Submission
         checkRankForm?.addEventListener('submit', async (e) => {
@@ -908,10 +975,10 @@
                      .single();
 
                  if (error) {
-                     if (error.code === 'PGRST116') {
+                     if (error.code === 'PGRST116') { // Not found code
                          throw new Error(`Username '${usernameToCheck}' not found.`);
                      } else {
-                        throw error;
+                        throw error; // Other DB errors
                      }
                  }
 
@@ -922,12 +989,13 @@
                          <p><strong>Location:</strong> ${data.city}, ${data.state}</p>
                      `;
                  } else if (!data) {
+                      // Should be caught by PGRST116, but defensive check
                       throw new Error(`Username '${usernameToCheck}' not found.`);
                  }
              } catch (error) {
                  console.error('Check rank error:', error.message);
                  displayError(rankErrorDiv, `Error: ${error.message}`);
-                 if (rankDisplayDiv) rankDisplayDiv.innerHTML = '';
+                 if (rankDisplayDiv) rankDisplayDiv.innerHTML = ''; // Clear 'Checking...'
              }
         });
 
@@ -938,41 +1006,52 @@
               if (!currentUser) return displayError(enterGameErrorDiv, 'You must be logged in to enter a game.');
              clearMessages(enterGameErrorDiv, enterGameSuccessDiv);
 
-             const gameCode = enterGameForm.game_code.value.trim().toUpperCase();
+             const gameCode = enterGameForm.game_code.value.trim().toUpperCase(); // Standardize code format
              if (!gameCode) {
                  return displayError(enterGameErrorDiv, 'Please enter a game code.');
              }
 
              try {
+                 // Placeholder: Find game, check status
                  const { data: gameData, error: gameError } = await supabaseClient // Use client
                      .from('games')
                      .select('id, status, game_type')
                      .eq('game_code', gameCode)
-                     .in('status', ['pending', 'active'])
+                     .in('status', ['pending', 'active']) // Only find joinable games
                      .single();
 
                  if (gameError || !gameData) {
-                      throw new Error(`Invalid or inactive game code: ${gameCode}`);
+                      // Handle not found or other errors
+                      if (gameError?.code === 'PGRST116') {
+                          throw new Error(`Game code '${gameCode}' not found or is inactive.`);
+                      } else {
+                          throw new Error(`Error finding game: ${gameError?.message || 'Unknown error'}`);
+                      }
                  }
 
                  // --- Optional: Add logic to add user to game_participants table ---
                  /*
+                 console.log(`Attempting to add user ${currentUser.id} to game ${gameData.id}`);
                  const { error: participantError } = await supabaseClient // Use client
                      .from('game_participants')
                      .insert({ game_id: gameData.id, user_id: currentUser.id });
 
                  if (participantError) {
+                     // Handle potential errors like already being in the game (duplicate key)
                      if (participantError.code === '23505') { // unique_violation
                          displaySuccess(enterGameSuccessDiv, `You are already part of game ${gameCode}.`);
                      } else {
+                         console.error("Error joining game:", participantError);
                          throw new Error(`Failed to join game: ${participantError.message}`);
                      }
                  } else {
+                      console.log("Successfully joined game.");
                       displaySuccess(enterGameSuccessDiv, `Successfully joined game ${gameCode} (${gameData.game_type})!`);
                  }
                  */
                  // --- End Optional Participant Logic ---
 
+                  // For now, just confirm the code is valid (if participant logic is commented out)
                  displaySuccess(enterGameSuccessDiv, `Game code ${gameCode} (${gameData.game_type}) is valid. Joining functionality placeholder.`);
                  enterGameForm.reset();
 
@@ -987,7 +1066,10 @@
         createGameForm?.addEventListener('submit', async (e) => {
              e.preventDefault();
              if (!supabaseClient) return displayError(createGameErrorDiv, 'Backend connection error.'); // Use client
-             if (!currentUser || !userProfile) return displayError(createGameErrorDiv, 'You must be logged in and have a complete profile to create a game.');
+             // Check for user AND complete profile
+             if (!currentUser || !userProfile || !userProfile.city || !userProfile.state) {
+                 return displayError(createGameErrorDiv, 'You must be logged in with a complete profile (city/state) to create a game.');
+             }
              clearMessages(createGameErrorDiv, createGameSuccessDiv);
              if(gameCodeDisplayDiv) gameCodeDisplayDiv.textContent = ''; // Clear previous code
 
@@ -996,39 +1078,43 @@
                  return displayError(createGameErrorDiv, 'Please select a game type.');
              }
              const gameType = selectedGameType.value;
-             const newGameCode = generateGameCode(5); // Use client-side generation for now
+             const newGameCode = generateGameCode(5); // Use simple client-side generation for now
 
              try {
-                  if (!userProfile.city || !userProfile.state) {
-                    throw new Error("Your profile is missing location data (city/state).");
-                  }
-
+                 // Profile city/state already validated above
+                 console.log(`Creating game with type: ${gameType}, code: ${newGameCode} by user ${currentUser.id} in ${userProfile.city}, ${userProfile.state}`);
                  const { data, error } = await supabaseClient // Use client
                      .from('games')
                      .insert({
                          game_code: newGameCode,
                          game_type: gameType,
                          creator_id: currentUser.id,
-                         city: userProfile.city,
+                         city: userProfile.city, // Use creator's city/state
                          state: userProfile.state
+                         // Status defaults to 'pending' via table definition
                      })
-                     .select()
-                     .single();
+                     .select() // Return the created record
+                     .single(); // Expecting one record back
 
                  if (error) {
+                     // Handle potential errors (e.g., duplicate game_code if client-gen clashes)
                       if (error.message.includes('duplicate key value violates unique constraint "games_game_code_key"')) {
+                          // Very unlikely with random generation, but handle it
                           throw new Error("Failed to generate a unique game code. Please try again.");
                       } else {
-                          throw error;
+                          console.error("Error inserting game:", error);
+                          throw error; // Rethrow other DB errors
                       }
                  }
 
                  if (data) {
+                    console.log("Game created successfully:", data);
                     if(gameCodeDisplayDiv) gameCodeDisplayDiv.textContent = `Game Created! Code: ${data.game_code}`;
                     displaySuccess(createGameSuccessDiv, `Game created successfully.`);
-                    createGameForm.reset();
+                    createGameForm.reset(); // Reset the form
                  } else {
-                    throw new Error("Game creation failed. No data returned.");
+                    // Should not happen if insert succeeds and select works, but safeguard
+                    throw new Error("Game creation failed unexpectedly. No data returned.");
                  }
 
              } catch (error) {
@@ -1047,12 +1133,15 @@
              if(leaderboardUl) leaderboardUl.innerHTML = '';
              if(leaderboardDisplayDiv) leaderboardDisplayDiv.style.display = 'none';
 
+             console.log(`Fetching leaderboard - Scope: ${scope}, City: ${city}, State: ${state}`);
+
              try {
                  let query = supabaseClient // Use client
                      .from('profiles')
                      .select('username, city, state, rank_score')
-                     .order('rank_score', { ascending: false })
-                     .limit(50);
+                     .not('username', 'is', null) // Exclude profiles where username hasn't been set yet
+                     .order('rank_score', { ascending: false }) // Highest rank first
+                     .limit(50); // Limit results for performance
 
                  let title = 'Leaderboard';
 
@@ -1063,7 +1152,7 @@
                      query = query.eq('state', state);
                      title = `Leaderboard - ${state}`;
                  } else {
-                     scope = 'country';
+                     scope = 'country'; // Default or fallback
                      title = `Leaderboard - Country`;
                  }
 
@@ -1074,6 +1163,7 @@
                  if (error) throw error;
 
                  if (data && data.length > 0 && leaderboardUl) {
+                    console.log(`Leaderboard data received (${data.length} players)`);
                      leaderboardUl.innerHTML = data.map((profile, index) => `
                          <li>
                              <span class="rank">${index + 1}.</span>
@@ -1084,6 +1174,7 @@
                      `).join('');
                      if(leaderboardDisplayDiv) leaderboardDisplayDiv.style.display = 'block';
                  } else if (leaderboardUl) {
+                    console.log('No players found for this leaderboard scope.');
                      leaderboardUl.innerHTML = '<li>No players found for this scope.</li>';
                       if(leaderboardDisplayDiv) leaderboardDisplayDiv.style.display = 'block';
                  }
@@ -1107,7 +1198,6 @@
              } else {
                  // Show an error or minimal state if Supabase failed to load
                  console.error("Supabase client failed to initialize. App functionality will be limited.");
-                 // Maybe show a specific error page or disable buttons
                  updateUIForLoggedOutUser(); // Ensure UI is in logged-out state
                  displayError(document.getElementById('login-error'), "Cannot connect to backend service."); // Show a generic error
                  showPage('login-page'); // Show login page but it won't work
@@ -1116,22 +1206,37 @@
 
          // Listen for Supabase auth state changes (only if client is valid)
          if (supabaseClient) {
-             supabaseClient.auth.onAuthStateChange((event, session) => { // Use client
+             supabaseClient.auth.onAuthStateChange(async (event, session) => { // Add async
                  console.log('Auth state changed:', event, session);
+
                  if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
                     if (session && session.user) {
                          currentUser = session.user;
-                         fetchUserProfile(currentUser.id).then(updateUIForLoggedInUser);
+                         // *** CRITICAL: Re-fetch profile AFTER state change ***
+                         await fetchUserProfile(currentUser.id); // Wait for profile fetch
+                         updateUIForLoggedInUser(); // Update UI with potentially new profile data
+                         // Optional: Redirect to home page if they landed on login/signup after verification
+                         const activePageId = document.querySelector('.page.active')?.id;
+                         if (activePageId === 'login-page' || activePageId === 'signup-page') {
+                             showPage('home-page');
+                         }
+                         console.log('onAuthStateChange processed SIGNED_IN/USER_UPDATED');
                     } else {
                         // Handle case where event is SIGNED_IN but session is null (shouldn't happen often)
+                        console.warn('SIGNED_IN event received but session is null.');
                         updateUIForLoggedOutUser();
                     }
                  } else if (event === 'SIGNED_OUT') {
                      updateUIForLoggedOutUser();
+                     // Optional: Force redirect to home on logout
+                      showPage('home-page');
+                      console.log('onAuthStateChange processed SIGNED_OUT');
                  } else if (event === 'INITIAL_SESSION') {
                     // Already handled by initial checkUserSession call, log for debugging
-                     console.log('Initial session event received.');
+                     console.log('Initial session event received - profile fetch handled by checkUserSession.');
+                     // Avoid redundant fetch/UI update here unless checkUserSession failed?
                  }
+                 // Add other events if needed (e.g., PASSWORD_RECOVERY)
              });
          } else {
             console.warn("Supabase client not available, cannot listen for auth state changes.");
