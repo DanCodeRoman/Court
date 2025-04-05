@@ -9,45 +9,42 @@
   <style>
     /* Basic Reset & Global Styles */
     * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+      margin: 0; padding: 0; box-sizing: border-box;
     }
     html, body {
       height: 100%;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: #ffffff;
-      color: #000000;
+      background-color: #fff;
+      color: #000;
       line-height: 1.6;
     }
     body {
       display: flex;
       justify-content: center;
-      align-items: flex-start; /* Align to top */
+      align-items: flex-start;
       padding-top: 80px; /* Space for fixed header */
       min-height: 100vh;
       /* Subtle background pattern - SVG Court Lines */
       background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23E0E0E0' stroke-width='0.5'%3E%3Ccircle cx='50' cy='50' r='40'/%3E%3Cpath d='M50 0 V100 M0 50 H100 M30 10 H70 M30 90 H70 M10 30 V70 M90 30 V70'/%3E%3C/g%3E%3C/svg%3E");
-      background-size: 200px 200px; /* Adjust size of the pattern tile */
+      background-size: 200px 200px;
       background-repeat: repeat;
     }
     #app {
       width: 100%;
-      max-width: 500px; /* Max width for content */
+      max-width: 500px;
       padding: 20px;
-      background-color: rgba(255, 255, 255, 0.95); /* Slightly opaque white to see pattern */
+      background-color: rgba(255, 255, 255, 0.95);
       border-radius: 8px;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      position: relative; /* Needed for absolute positioning inside */
-      min-height: 400px; /* Ensure some minimum height */
-      display: flex; /* Use flexbox for page alignment */
+      position: relative;
+      min-height: 400px;
+      display: flex;
       flex-direction: column;
     }
     /* Header */
     header {
-      position: fixed; /* Fixed header */
-      top: 0;
-      left: 0;
+      position: fixed;
+      top: 0; left: 0;
       width: 100%;
       background-color: #fff;
       padding: 10px 20px;
@@ -62,7 +59,7 @@
       font-weight: bold;
     }
     .auth-buttons button,
-    .auth-buttons span /* For logged in user display */ {
+    .auth-buttons span {
       margin-left: 10px;
       padding: 8px 15px;
       font-size: 0.9em;
@@ -70,58 +67,45 @@
 
     /* Page Sections */
     .page {
-      display: none; /* Hidden by default */
+      display: none;
       width: 100%;
-      flex-grow: 1; /* Allow page content to fill space */
+      flex-grow: 1;
       flex-direction: column;
       align-items: center;
-      padding-top: 20px; /* Space below header */
+      padding-top: 20px;
       animation: fadeIn 0.5s ease-in-out;
     }
-    .page.active {
-      display: flex; /* Show active page */
-    }
+    .page.active { display: flex; }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
+
     /* Common Elements */
     h2 {
-      margin-bottom: 25px;
-      font-weight: 600;
-      text-align: center;
+      margin-bottom: 25px; font-weight: 600; text-align: center;
     }
     label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: 500;
+      display: block; margin-bottom: 5px; font-weight: 500;
     }
     input[type="text"],
     input[type="password"],
     input[type="email"],
     select {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 15px;
-      border: 1px solid #ccc;
-      border-radius: 20px; /* Rounded inputs */
-      font-size: 1em;
+      width: 100%; padding: 12px; margin-bottom: 15px;
+      border: 1px solid #ccc; border-radius: 20px; font-size: 1em;
     }
     button {
       padding: 12px 25px;
-      background-color: #000000;
-      color: #ffffff;
-      border: none;
-      border-radius: 25px; /* Rounded buttons */
-      cursor: pointer;
-      font-size: 1em;
-      font-weight: 500;
+      background-color: #000;
+      color: #fff;
+      border: none; border-radius: 25px;
+      cursor: pointer; font-size: 1em; font-weight: 500;
       transition: background-color 0.3s ease, transform 0.1s ease;
       display: inline-block;
     }
     button:disabled {
-      background-color: #ccc;
-      cursor: not-allowed;
+      background-color: #ccc; cursor: not-allowed;
     }
     button:hover:not(:disabled) {
       background-color: #333;
@@ -130,73 +114,44 @@
       transform: scale(0.98);
     }
     .form-group {
-      margin-bottom: 15px;
-      width: 100%;
+      margin-bottom: 15px; width: 100%;
     }
     .button-group {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 15px;
-      margin-top: 20px;
-      width: 100%;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 15px; margin-top: 20px; width: 100%;
     }
     .button-group button {
-      width: 80%;
-      max-width: 300px;
+      width: 80%; max-width: 300px;
     }
     .link-button {
-      background: none;
-      border: none;
-      color: #007bff;
-      text-decoration: underline;
-      cursor: pointer;
-      padding: 5px;
-      font-size: 0.9em;
+      background: none; border: none; color: #007bff; text-decoration: underline;
+      cursor: pointer; padding: 5px; font-size: 0.9em;
     }
-    .link-button:hover {
-      color: #0056b3;
-    }
+    .link-button:hover { color: #0056b3; }
     .back-button {
-      margin-top: 30px;
-      background-color: #6c757d; /* Grey back button */
-      font-size: 0.9em;
+      margin-top: 30px; background-color: #6c757d; font-size: 0.9em;
     }
-    .back-button:hover {
-      background-color: #5a6268;
-    }
+    .back-button:hover { background-color: #5a6268; }
 
     /* Home Page */
     #home-page .basketball-icon {
-      font-size: 4em; /* Make icon larger */
-      margin-bottom: 20px;
-      text-align: center;
+      font-size: 4em; margin-bottom: 20px; text-align: center;
     }
     #home-page .basketball-icon svg {
-      width: 60px;
-      height: 60px;
-      fill: #000;
+      width: 60px; height: 60px; fill: #000;
     }
 
     /* Create Game Page */
     #create-game-page .game-type-select label {
-      margin-right: 15px;
-      display: inline-block;
+      margin-right: 15px; display: inline-block;
     }
     #create-game-page .game-type-select input[type="radio"] {
-      margin-right: 5px;
-      width: auto; 
-      vertical-align: middle;
+      margin-right: 5px; width: auto; vertical-align: middle;
     }
     #game-code-display {
-      margin-top: 20px;
-      font-size: 1.2em;
-      font-weight: bold;
-      background-color: #f0f0f0;
-      padding: 10px 15px;
-      border-radius: 5px;
-      text-align: center;
-      word-break: break-all;
+      margin-top: 20px; font-size: 1.2em; font-weight: bold;
+      background-color: #f0f0f0; padding: 10px 15px; border-radius: 5px;
+      text-align: center; word-break: break-all;
     }
     #game-code-display:empty {
       display: none;
@@ -205,80 +160,56 @@
     /* Check Rank Page */
     #check-rank-page #rank-display,
     #leaderboard-page .leaderboard-list {
-      margin-top: 20px;
-      padding: 15px;
-      background-color: #f8f9fa;
-      border-radius: 5px;
-      text-align: center;
-      width: 100%;
+      margin-top: 20px; padding: 15px; background-color: #f8f9fa;
+      border-radius: 5px; text-align: center; width: 100%;
     }
 
     /* Leaderboard Page */
     #leaderboard-page .leaderboard-list ul {
-      list-style: none;
-      padding: 0;
+      list-style: none; padding: 0;
     }
     #leaderboard-page .leaderboard-list li {
-      padding: 8px 0;
-      border-bottom: 1px solid #eee;
-      display: flex;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 5px;
+      padding: 8px 0; border-bottom: 1px solid #eee;
+      display: flex; justify-content: space-between; flex-wrap: wrap; gap: 5px;
     }
     #leaderboard-page .leaderboard-list li:last-child {
       border-bottom: none;
     }
-    #leaderboard-page .leaderboard-list .rank { font-weight: bold; margin-right: 10px;}
+    #leaderboard-page .leaderboard-list .rank { font-weight: bold; margin-right: 10px; }
     #leaderboard-page .leaderboard-list .name { flex-grow: 1; text-align: left; }
     #leaderboard-page .leaderboard-list .location { font-size: 0.9em; color: #555; }
     #leaderboard-page .leaderboard-list .score { font-style: italic; color: #555; margin-left: 10px; }
     #leaderboard-page .leaderboard-controls {
-      margin-bottom: 15px;
-      text-align: center;
+      margin-bottom: 15px; text-align: center;
     }
     #leaderboard-page .leaderboard-controls button {
-      margin: 0 5px;
-      padding: 5px 10px;
-      font-size: 0.9em;
-      background-color: #e9ecef;
-      color: #000;
+      margin: 0 5px; padding: 5px 10px; font-size: 0.9em;
+      background-color: #e9ecef; color: #000;
     }
     #leaderboard-page .leaderboard-controls button.active {
-      background-color: #000;
-      color: #fff;
+      background-color: #000; color: #fff;
     }
     #leaderboard-page .leaderboard-controls button:disabled {
-      background-color: #f8f9fa;
-      color: #aaa;
-      cursor: not-allowed;
+      background-color: #f8f9fa; color: #aaa; cursor: not-allowed;
     }
 
     /* Form feedback/error messages */
     .error-message {
-      color: #dc3545;
-      font-size: 0.9em;
-      margin-top: -10px;
-      margin-bottom: 10px;
-      text-align: center;
-      display: none; 
+      color: #dc3545; font-size: 0.9em;
+      margin-top: -10px; margin-bottom: 10px;
+      text-align: center; display: none;
     }
     .success-message {
-      color: #28a745;
-      font-size: 0.9em;
-      margin-top: 10px;
-      margin-bottom: 10px;
-      text-align: center;
-      display: none; 
+      color: #28a745; font-size: 0.9em;
+      margin-top: 10px; margin-bottom: 10px;
+      text-align: center; display: none;
     }
   </style>
 </head>
 <body>
-
   <header>
     <div class="app-title">Court</div>
     <div class="auth-buttons">
-      <!-- Auth buttons dynamically updated by JS -->
       <span id="user-display" style="display: none; margin-right: 15px;"></span>
       <button id="login-nav-btn">Login</button>
       <button id="signup-nav-btn">Sign Up</button>
@@ -291,7 +222,6 @@
     <section id="home-page" class="page active">
       <div class="basketball-icon">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-          <!--! Font Awesome Basketball Icon -->
           <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM133.3 89.9C161.4 60.8 216 32 256 32s94.6 28.8 122.7 57.9c1.7 1.7 3.1 3.7 3.8 5.9l-16.1 2.1C360.7 90.1 313.8 72 256 72s-104.7 18.1-110.4 25.9l-16.1-2.1c.7-2.1 2.1-4.1 3.8-5.9zM392.9 112.3c-1.7-1.7-3.1-3.7-3.8-5.9L373 108.5c5.7 7.8 10.4 16.2 13.9 24.9L410.7 131c-6.4-10.4-14.7-19.6-24.7-26.5l-10.9-7.2c-6-3.9-12.3-6.9-18.8-8.8l-1.8-15.7c11.2 3.3 21.7 8.4 31.1 15.2zM99.1 112.3C109 105.3 120.1 100 132.3 97.2L130.5 113c-6.5 1.9-12.8 4.9-18.8 8.8l-10.9 7.2C90.8 135.4 82.5 144.6 76.1 155l23.8-2.3c3.5-8.7 8.2-17.1 13.9-24.9L99.1 112.3zm74.7 281.7C146.6 373.2 92 344 52 344s-94.6-29.2-122.7-58.3c-1.7-1.7-3.1-3.7-3.8-5.9l16.1-2.1c5.7 7.8 52.6 25.9 110.4 25.9s104.7-18.1 110.4-25.9l16.1 2.1c-.7 2.1-2.1 4.1-3.8 5.9zM101.3 380.7l-23.8 2.3c6.4 10.4 14.7 19.6 24.7 26.5l10.9 7.2c6 3.9 12.3 6.9 18.8 8.8l1.8 15.7C120.1 438.1 109 433 99.1 426.2l-11.7-7.6c-9.5-6.2-17.9-13.7-24.9-22.4zm287.8-22.4c-7 8.7-15.5 16.2-24.9 22.4l-11.7 7.6c-9.9 6.8-20.9 11.9-32.7 15.2l1.8-15.7c6.5-1.9 12.8-4.9 18.8-8.8l10.9-7.2c10-6.9 18.3-16.1 24.7-26.5l23.8 2.3zm-13.9-24.9L373 331.5c-5.7-7.8-10.4-16.2-13.9-24.9l-23.8 2.3c6.4-10.4 14.7-19.6 24.7-26.5l10.9-7.2c6-3.9 12.3-6.9 18.8-8.8l1.8-15.7c11.2 3.3 21.7 8.4 31.1 15.2l11.7 7.6c9.5 6.2 17.9 13.7 24.9 22.4l-16.1-2.1c-5.7-7.8-52.6-25.9-110.4-25.9s-104.7 18.1-110.4 25.9l-16.1 2.1zm-18.8 8.8l-10.9 7.2c-10 6.9-18.3 16.1-24.7 26.5L101.3 380.7l16.1 2.1c.7-2.1 2.1-4.1 3.8-5.9c28.1-29.2 82.7-58.3 122.7-58.3s94.6 29.2 122.7 58.3c1.7 1.7 3.1 3.7 3.8 5.9l16.1-2.1c-.7-2.1-2.1-4.1-3.8-5.9c-28.1-29.2-82.7-58.3-122.7-58.3s-94.6 29.2-122.7 58.3z"/>
         </svg>
       </div>
@@ -481,23 +411,23 @@
 
   <script>
     // --- Supabase Setup ---
-    const SUPABASE_URL = 'https://noxophuyplfgcmjqinrb.supabase.co'; 
+    const SUPABASE_URL = 'https://noxophuyplfgcmjqinrb.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5veG9waHV5cGxmZ2NtanFpbnJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4ODMzMDIsImV4cCI6MjA1OTQ1OTMwMn0.UlX8E64FWEuJz1zJ1m9U9WDuyCRfHhV-AscEGzheTSU';
 
     let supabaseClient;
     try {
-      if (typeof supabase === 'undefined' || !supabase.createClient) {
+      if (!window.supabase || !supabase.createClient) {
         throw new Error("Supabase library not loaded correctly.");
       }
       supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       console.log('Supabase client initialized.');
-    } catch (error) {
-      console.error('Error initializing Supabase client:', error);
+    } catch (err) {
+      console.error('Error initializing Supabase client:', err);
       supabaseClient = null;
-      alert(`Failed to connect to the backend: ${error.message}`);
+      alert(`Failed to connect to backend: ${err.message}`);
     }
 
-    // --- Global Variables ---
+    // --- Global Vars ---
     let currentUser = null;
     let userProfile = null;
 
@@ -509,7 +439,7 @@
     const logoutBtn = document.getElementById('logout-btn');
     const userDisplay = document.getElementById('user-display');
 
-    // Form & Display Elements
+    // Form & Display
     const loginForm = document.getElementById('login-form');
     const signupForm = document.getElementById('signup-form');
     const checkRankForm = document.getElementById('check-rank-form');
@@ -535,60 +465,60 @@
     const leaderboardStateBtn = document.getElementById('leaderboard-state-btn');
     const leaderboardCountryBtn = document.getElementById('leaderboard-country-btn');
 
+    // --- Utility Functions ---
     function showPage(pageId) {
-      pages.forEach(page => page.classList.remove('active'));
+      pages.forEach(p => p.classList.remove('active'));
       const targetPage = document.getElementById(pageId);
       if (targetPage) {
         targetPage.classList.add('active');
-        if (appDiv) appDiv.scrollTop = 0; 
+        if (appDiv) appDiv.scrollTop = 0;
+
+        // If going to leaderboard, fetch it
         if (pageId === 'leaderboard-page' && supabaseClient) {
-          fetchLeaderboard('country'); 
+          fetchLeaderboard('country');
           setActiveLeaderboardButton(leaderboardCountryBtn);
         }
       } else {
-        console.error(`Page with ID ${pageId} not found. Showing home instead.`);
+        console.error(`Page ${pageId} not found. Going home.`);
         document.getElementById('home-page').classList.add('active');
       }
     }
-
-    function displayError(element, message) {
-      if (element) {
-        element.textContent = message;
-        element.style.display = message ? 'block' : 'none';
+    function displayError(elem, msg) {
+      if (elem) {
+        elem.textContent = msg;
+        elem.style.display = msg ? 'block' : 'none';
       }
     }
-    function displaySuccess(element, message) {
-      if (element) {
-        element.textContent = message;
-        element.style.display = message ? 'block' : 'none';
+    function displaySuccess(elem, msg) {
+      if (elem) {
+        elem.textContent = msg;
+        elem.style.display = msg ? 'block' : 'none';
       }
     }
-    function clearMessages(...elements) {
-      elements.forEach(el => {
+    function clearMessages(...elems) {
+      elems.forEach(el => {
         if (el) {
           el.textContent = '';
           el.style.display = 'none';
         }
       });
     }
-
     function generateGameCode(length = 5) {
-      const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
       let result = '';
       for (let i = 0; i < length; i++) {
-        result += characters.charAt(Math.floor(Math.random() * characters.length));
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
       }
       return result;
     }
-
-    function setActiveLeaderboardButton(activeButton) {
+    function setActiveLeaderboardButton(activeBtn) {
       [leaderboardCityBtn, leaderboardStateBtn, leaderboardCountryBtn].forEach(btn => {
         btn?.classList.remove('active');
       });
-      activeButton?.classList.add('active');
+      activeBtn?.classList.add('active');
     }
 
-    // --- Auth / Profile Logic ---
+    // --- Auth/Session ---
     async function checkUserSession() {
       if (!supabaseClient) return;
       try {
@@ -599,26 +529,24 @@
           currentUser = session.user;
           await fetchUserProfile(currentUser.id);
           updateUIForLoggedInUser();
-          console.log('Session found:', currentUser.email);
+          console.log('Session found for:', currentUser.email);
         } else {
-          currentUser = null;
-          userProfile = null;
+          currentUser = null; userProfile = null;
           updateUIForLoggedOutUser();
           console.log('No active user session.');
         }
       } catch (err) {
-        console.error("Error checking user session:", err.message);
+        console.error('Session check error:', err);
         updateUIForLoggedOutUser();
       }
     }
 
     async function fetchUserProfile(userId) {
       if (!supabaseClient || !userId) {
-        console.log('Cannot fetch profile - missing client or userId');
-        userProfile = null;
-        return;
+        console.log('No client or userId for profile fetch.');
+        userProfile = null; return;
       }
-      console.log(`Fetching profile for user ID: ${userId}`);
+      console.log('Fetching profile for:', userId);
       try {
         const { data, error, status } = await supabaseClient
           .from('profiles')
@@ -627,65 +555,64 @@
           .single();
 
         if (error && status !== 406) {
-          console.error('Error fetching profile:', error);
+          console.error('Profile fetch error:', error);
           throw error;
         }
-
         if (data) {
           userProfile = data;
-          console.log('Profile fetched:', userProfile);
+          console.log('Profile:', userProfile);
         } else {
           userProfile = null;
-          console.log('Profile not found for user ID:', userId);
+          console.log('No profile row for:', userId);
         }
         updateUserDisplay();
       } catch (err) {
-        console.error('fetchUserProfile error:', err.message);
+        console.error('fetchUserProfile error:', err);
         userProfile = null;
         updateUserDisplay();
       }
     }
 
     function updateUIForLoggedInUser() {
-      if(loginNavBtn) loginNavBtn.style.display = 'none';
-      if(signupNavBtn) signupNavBtn.style.display = 'none';
-      if(logoutBtn) logoutBtn.style.display = 'inline-block';
-      if(userDisplay) userDisplay.style.display = 'inline-block';
+      if (loginNavBtn) loginNavBtn.style.display = 'none';
+      if (signupNavBtn) signupNavBtn.style.display = 'none';
+      if (logoutBtn) logoutBtn.style.display = 'inline-block';
+      if (userDisplay) userDisplay.style.display = 'inline-block';
       updateUserDisplay();
 
       const createBtn = document.getElementById('nav-create-game');
       const enterBtn = document.getElementById('nav-enter-game');
 
       if (enterBtn) enterBtn.disabled = false;
-      if (createBtn) createBtn.disabled = !(userProfile && userProfile.city && userProfile.state);
-
+      if (createBtn) {
+        // Need a city & state to create a game
+        createBtn.disabled = !(userProfile && userProfile.city && userProfile.state);
+      }
+      // Leaderboard city/state
       if (leaderboardCityBtn) leaderboardCityBtn.disabled = !(userProfile && userProfile.city);
       if (leaderboardStateBtn) leaderboardStateBtn.disabled = !(userProfile && userProfile.state);
     }
 
     function updateUserDisplay() {
-      if (userDisplay) {
-        if (currentUser) {
-          // Show username if available, else email
-          userDisplay.textContent = userProfile?.username
-            ? `Hi, ${userProfile.username}`
-            : `Hi, ${currentUser.email}`;
-        } else {
-          userDisplay.textContent = '';
-        }
+      if (!userDisplay) return;
+      // Always prefer the username over email
+      if (currentUser && userProfile && userProfile.username) {
+        userDisplay.textContent = `Hi, ${userProfile.username}`;
+      } else {
+        // If no username in profile, show nothing (or show email fallback).
+        userDisplay.textContent = currentUser ? `Hi, ${currentUser.email}` : '';
       }
     }
 
     function updateUIForLoggedOutUser() {
-      if(loginNavBtn) loginNavBtn.style.display = 'inline-block';
-      if(signupNavBtn) signupNavBtn.style.display = 'inline-block';
-      if(logoutBtn) logoutBtn.style.display = 'none';
-      if(userDisplay) {
+      if (loginNavBtn) loginNavBtn.style.display = 'inline-block';
+      if (signupNavBtn) signupNavBtn.style.display = 'inline-block';
+      if (logoutBtn) logoutBtn.style.display = 'none';
+      if (userDisplay) {
         userDisplay.style.display = 'none';
         userDisplay.textContent = '';
       }
-      currentUser = null;
-      userProfile = null;
+      currentUser = null; userProfile = null;
 
       const createBtn = document.getElementById('nav-create-game');
       const enterBtn = document.getElementById('nav-enter-game');
@@ -694,10 +621,9 @@
       if (leaderboardCityBtn) leaderboardCityBtn.disabled = true;
       if (leaderboardStateBtn) leaderboardStateBtn.disabled = true;
 
-      // If user is on protected pages, return to home
+      // If on protected page, return home
       const activePage = document.querySelector('.page.active');
-      const protectedPages = ['create-game-page', 'enter-game-page'];
-      if (activePage && protectedPages.includes(activePage.id)) {
+      if (activePage && ['create-game-page','enter-game-page'].includes(activePage.id)) {
         showPage('home-page');
       }
     }
@@ -712,25 +638,25 @@
         showPage('home-page');
         console.log('User logged out.');
       } catch (err) {
-        console.error('Logout error:', err.message);
-        displayError(loginErrorDiv, 'Logout failed. Please try again.');
+        console.error('Logout error:', err);
+        displayError(loginErrorDiv, 'Logout failed.');
       }
     }
 
     // --- Leaderboard ---
     async function fetchLeaderboard(scope = 'country', city = null, state = null) {
-      if (!supabaseClient) return displayError(leaderboardErrorDiv, 'Backend error');
+      if (!supabaseClient) return displayError(leaderboardErrorDiv, 'Backend not initialized');
       clearMessages(leaderboardErrorDiv);
-      if(leaderboardLoadingDiv) leaderboardLoadingDiv.style.display = 'block';
-      if(leaderboardUl) leaderboardUl.innerHTML = '';
-      if(leaderboardDisplayDiv) leaderboardDisplayDiv.style.display = 'none';
+      if (leaderboardLoadingDiv) leaderboardLoadingDiv.style.display = 'block';
+      if (leaderboardUl) leaderboardUl.innerHTML = '';
+      if (leaderboardDisplayDiv) leaderboardDisplayDiv.style.display = 'none';
 
       try {
         let query = supabaseClient
           .from('profiles')
           .select('username, city, state, rank_score')
-          .not('username', 'is', null)
-          .order('rank_score', { ascending: false })
+          .not('username','is',null)
+          .order('rank_score',{ ascending: false })
           .limit(50);
 
         let title = 'Leaderboard';
@@ -743,30 +669,30 @@
         } else {
           title = 'Leaderboard - Country';
         }
-        if(leaderboardTitle) leaderboardTitle.textContent = title;
+        if (leaderboardTitle) leaderboardTitle.textContent = title;
 
         const { data, error } = await query;
         if (error) throw error;
 
         if (data && data.length > 0 && leaderboardUl) {
-          leaderboardUl.innerHTML = data.map((profile, i) => `
+          leaderboardUl.innerHTML = data.map((p, i) => `
             <li>
               <span class="rank">${i+1}.</span>
-              <span class="name">${profile.username}</span>
-              <span class="location">(${profile.city}, ${profile.state})</span>
-              <span class="score">${profile.rank_score} pts</span>
+              <span class="name">${p.username}</span>
+              <span class="location">(${p.city}, ${p.state})</span>
+              <span class="score">${p.rank_score} pts</span>
             </li>
           `).join('');
-          if(leaderboardDisplayDiv) leaderboardDisplayDiv.style.display = 'block';
+          if (leaderboardDisplayDiv) leaderboardDisplayDiv.style.display = 'block';
         } else if (leaderboardUl) {
           leaderboardUl.innerHTML = '<li>No players found.</li>';
-          if(leaderboardDisplayDiv) leaderboardDisplayDiv.style.display = 'block';
+          if (leaderboardDisplayDiv) leaderboardDisplayDiv.style.display = 'block';
         }
       } catch (err) {
-        console.error('Leaderboard error:', err.message);
+        console.error('fetchLeaderboard error:', err);
         displayError(leaderboardErrorDiv, `Failed to load leaderboard: ${err.message}`);
       } finally {
-        if(leaderboardLoadingDiv) leaderboardLoadingDiv.style.display = 'none';
+        if (leaderboardLoadingDiv) leaderboardLoadingDiv.style.display = 'none';
       }
     }
 
@@ -782,14 +708,11 @@
     document.getElementById('goto-signup')?.addEventListener('click', () => showPage('signup-page'));
     document.getElementById('goto-login')?.addEventListener('click', () => showPage('login-page'));
 
-    document.querySelectorAll('.back-button').forEach(button => {
-      button.addEventListener('click', (e) => {
+    document.querySelectorAll('.back-button').forEach(btn => {
+      btn.addEventListener('click', e => {
         const targetPageId = e.target.getAttribute('data-target');
-        if (targetPageId) {
-          showPage(targetPageId);
-        } else {
-          showPage('home-page');
-        }
+        if (targetPageId) showPage(targetPageId);
+        else showPage('home-page');
       });
     });
 
@@ -798,7 +721,7 @@
         fetchLeaderboard('city', userProfile.city, userProfile.state);
         setActiveLeaderboardButton(leaderboardCityBtn);
       } else {
-        displayError(leaderboardErrorDiv, 'Need city/state in profile to show city leaderboard.');
+        displayError(leaderboardErrorDiv, 'Need city & state in profile to show city leaderboard');
       }
     });
     leaderboardStateBtn?.addEventListener('click', () => {
@@ -806,7 +729,7 @@
         fetchLeaderboard('state', null, userProfile.state);
         setActiveLeaderboardButton(leaderboardStateBtn);
       } else {
-        displayError(leaderboardErrorDiv, 'Need state in profile to show state leaderboard.');
+        displayError(leaderboardErrorDiv, 'Need state in profile to show state leaderboard');
       }
     });
     leaderboardCountryBtn?.addEventListener('click', () => {
@@ -817,37 +740,34 @@
     });
 
     // --- Login Form ---
-    loginForm?.addEventListener('submit', async (e) => {
+    loginForm?.addEventListener('submit', async e => {
       e.preventDefault();
-      if (!supabaseClient) return displayError(loginErrorDiv, 'Backend not initialized.');
+      if (!supabaseClient) return displayError(loginErrorDiv, 'Backend not initialized');
       clearMessages(loginErrorDiv, signupErrorDiv, signupSuccessDiv);
 
-      const email = loginForm.username.value;
+      const email = loginForm.username.value.trim();
       const password = loginForm.password.value;
-      console.log("Attempting signInWithPassword for:", email);
+      console.log('Attempting signInWithPassword for:', email);
 
       try {
-        const { data, error } = await supabaseClient.auth.signInWithPassword({
-          email,
-          password,
-        });
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error) {
-          console.error("SignIn error:", error);
+          console.error('SignIn error:', error);
           throw error;
         }
-        console.log("SignIn success. Data:", data);
+        console.log('SignIn success:', data);
         loginForm.reset();
         showPage('home-page');
       } catch (err) {
-        console.error('Login error:', err.message);
+        console.error('Login error:', err);
         displayError(loginErrorDiv, `Login failed: ${err.message}`);
       }
     });
 
     // --- Sign Up Form ---
-    signupForm?.addEventListener('submit', async (e) => {
+    signupForm?.addEventListener('submit', async e => {
       e.preventDefault();
-      if (!supabaseClient) return displayError(signupErrorDiv, 'Backend not initialized.');
+      if (!supabaseClient) return displayError(signupErrorDiv, 'Backend not initialized');
       clearMessages(signupErrorDiv, signupSuccessDiv, loginErrorDiv);
 
       const username = signupForm.username.value.trim();
@@ -868,20 +788,21 @@
       }
 
       try {
-        // 1. Sign up
+        // 1. Create user (no email confirmations, per your settings)
         const { data: authData, error: authError } = await supabaseClient.auth.signUp({ email, password });
         if (authError) throw new Error(`SignUp failed: ${authError.message}`);
-        if (!authData.user) throw new Error('Signup successful, but no user returned.');
+        if (!authData.user) throw new Error('Signup succeeded, but no user returned.');
 
-        console.log('Signup successful. New user ID:', authData.user.id);
+        console.log('Signup successful. User ID:', authData.user.id);
 
-        // 2. Update profile
+        // 2. Update profile with username, city, state, and start rank_score at 0
         const { data: updateData, error: profileError } = await supabaseClient
           .from('profiles')
           .update({
             username,
             city,
             state,
+            rank_score: 0,    // Start them at 0 points
             updated_at: new Date()
           })
           .eq('id', authData.user.id)
@@ -893,18 +814,18 @@
           throw new Error(`Account created, but failed to save profile: ${profileError.message}`);
         }
         if (!updateData) {
-          console.error('No profile data returned. Possibly RLS or missing row.');
+          console.error('No profile row returned. Possibly RLS or missing row.');
           throw new Error('Profile row not updated. Check your RLS or triggers.');
         }
-
         console.log('Profile updated:', updateData);
+
         displaySuccess(signupSuccessDiv, 'Signup successful! You can now log in.');
         signupForm.reset();
-        // Optionally show login page: showPage('login-page');
+        // Optionally go to login: showPage('login-page');
       } catch (err) {
-        console.error('Sign up error:', err);
-        if (err.message.includes("duplicate key value") && err.message.includes("profiles_username_key")) {
-          displayError(signupErrorDiv, "That username is already taken.");
+        console.error('Signup error:', err);
+        if (err.message.includes('duplicate key value') && err.message.includes('profiles_username_key')) {
+          displayError(signupErrorDiv, 'This username is already taken.');
         } else {
           displayError(signupErrorDiv, `Signup failed: ${err.message}`);
         }
@@ -912,9 +833,9 @@
     });
 
     // --- Check Rank ---
-    checkRankForm?.addEventListener('submit', async (e) => {
+    checkRankForm?.addEventListener('submit', async e => {
       e.preventDefault();
-      if (!supabaseClient) return displayError(rankErrorDiv, 'Backend not initialized.');
+      if (!supabaseClient) return displayError(rankErrorDiv, 'Backend not initialized');
       clearMessages(rankErrorDiv);
       rankDisplayDiv.innerHTML = '<p>Checking...</p>';
 
@@ -932,12 +853,11 @@
 
         if (error) {
           console.error('Rank check error:', error);
-          throw new Error(error.message.includes('PGRST116') ?
-            `Username '${usernameToCheck}' not found.` :
-            error.message
+          throw new Error(error.message.includes('PGRST116')
+            ? `Username '${usernameToCheck}' not found.`
+            : error.message
           );
         }
-
         if (data) {
           rankDisplayDiv.innerHTML = `
             <p><strong>Username:</strong> ${data.username}</p>
@@ -948,14 +868,14 @@
           rankDisplayDiv.innerHTML = `<p>Username '${usernameToCheck}' not found.</p>`;
         }
       } catch (err) {
-        console.error('Check rank error:', err.message);
+        console.error('Check rank error:', err);
         displayError(rankErrorDiv, err.message);
         rankDisplayDiv.innerHTML = '';
       }
     });
 
     // --- Enter Game ---
-    enterGameForm?.addEventListener('submit', async (e) => {
+    enterGameForm?.addEventListener('submit', async e => {
       e.preventDefault();
       if (!supabaseClient) return displayError(enterGameErrorDiv, 'Backend not initialized.');
       if (!currentUser) return displayError(enterGameErrorDiv, 'You must be logged in to enter a game.');
@@ -983,13 +903,13 @@
         displaySuccess(enterGameSuccessDiv, `Game code ${gameCode} (${gameData.game_type}) is valid.`);
         enterGameForm.reset();
       } catch (err) {
-        console.error('Enter game error:', err.message);
+        console.error('Enter game error:', err);
         displayError(enterGameErrorDiv, `Error: ${err.message}`);
       }
     });
 
     // --- Create Game ---
-    createGameForm?.addEventListener('submit', async (e) => {
+    createGameForm?.addEventListener('submit', async e => {
       e.preventDefault();
       if (!supabaseClient) return displayError(createGameErrorDiv, 'Backend not initialized.');
       if (!currentUser || !userProfile || !userProfile.city || !userProfile.state) {
@@ -1020,42 +940,39 @@
 
         if (error) {
           if (error.message.includes('duplicate key value violates unique constraint')) {
-            throw new Error("Failed to generate unique game code. Try again.");
+            throw new Error('Failed to generate a unique game code. Try again.');
           }
           throw error;
         }
-        if (data) {
-          gameCodeDisplayDiv.textContent = `Game Created! Code: ${data.game_code}`;
-          displaySuccess(createGameSuccessDiv, 'Game created successfully.');
-          createGameForm.reset();
-        } else {
-          throw new Error("Game creation failed unexpectedly. No data returned.");
+        if (!data) {
+          throw new Error('Game creation failed unexpectedly. No data returned.');
         }
+        gameCodeDisplayDiv.textContent = `Game Created! Code: ${data.game_code}`;
+        displaySuccess(createGameSuccessDiv, 'Game created successfully.');
+        createGameForm.reset();
       } catch (err) {
-        console.error('Create game error:', err.message);
+        console.error('Create game error:', err);
         displayError(createGameErrorDiv, `Error: ${err.message}`);
       }
     });
 
-    // --- Initial Load ---
+    // --- Page Load ---
     document.addEventListener('DOMContentLoaded', async () => {
       console.log('DOM fully loaded.');
-
       if (supabaseClient) {
-        // Uncomment the line below if you suspect a leftover session is causing double SIGNED_IN events:
+        // Uncomment if you suspect leftover sessions:
         // await supabaseClient.auth.signOut();
-
         showPage('home-page');
         await checkUserSession();
       } else {
-        console.error("Supabase client not available. App will be limited.");
+        console.error('Supabase client not loaded - limited functionality');
         updateUIForLoggedOutUser();
-        displayError(loginErrorDiv, "Cannot connect to backend.");
+        displayError(loginErrorDiv, 'Cannot connect to backend.');
         showPage('login-page');
       }
     });
 
-    // --- onAuthStateChange ---
+    // --- Auth State Change ---
     if (supabaseClient) {
       supabaseClient.auth.onAuthStateChange(async (event, session) => {
         console.log('Auth state changed:', event, session);
@@ -1063,9 +980,8 @@
           currentUser = session.user;
           await fetchUserProfile(currentUser.id);
           updateUIForLoggedInUser();
-          // If on login or signup page, go home
           const activePageId = document.querySelector('.page.active')?.id;
-          if (activePageId === 'login-page' || activePageId === 'signup-page') {
+          if (['login-page','signup-page'].includes(activePageId)) {
             showPage('home-page');
           }
         } else if (event === 'SIGNED_OUT') {
