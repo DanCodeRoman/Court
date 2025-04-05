@@ -1,523 +1,378 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Court App (Username/Password)</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- Styles -->
+  <meta charset="UTF-8" />
+  <title>Court – Real-Life Basketball Organizer</title>
   <style>
+    /* Basic reset */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    html, body {
-      height: 100%;
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #fff;
+      color: #000;
+      /* Faint basketball-court-like pattern */
+      background-image: 
+        linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
+      background-size: 50px 50px;
+      background-repeat: repeat;
       width: 100%;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-      background: #fff;
-      color: #000;
-      overflow-x: hidden;
-    }
-    .container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
       min-height: 100vh;
-      padding: 20px;
-      position: relative;
+      transition: background-color 0.5s ease;
     }
-    h1 {
-      font-size: 2rem;
-      font-weight: 600;
-      margin: 20px 0 30px;
-    }
-    h2 {
-      font-size: 1.5rem;
-      margin: 15px 0;
-    }
-    .basketball-icon {
-      width: 120px;
-      height: 120px;
-      margin-top: 40px;
-      margin-bottom: 20px;
-    }
-    .main-button,
-    .back-button,
-    .action-button {
-      display: inline-block;
-      border: 1px solid #000;
-      border-radius: 9999px;
-      background: #fff;
-      color: #000;
-      font-size: 1rem;
-      font-weight: 500;
-      padding: 14px 24px;
-      margin: 8px;
-      cursor: pointer;
-      transition: transform 0.1s, box-shadow 0.15s;
-    }
-    .main-button:active,
-    .back-button:active,
-    .action-button:active {
-      transform: scale(0.95);
-      box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
-    }
-    .main-button:hover,
-    .back-button:hover,
-    .action-button:hover {
-      background: #f2f2f2;
-    }
-    .page {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+
+    /* Top navigation bar */
+    #navBar {
       display: flex;
-      flex-direction: column;
+      justify-content: space-between;
       align-items: center;
-      justify-content: flex-start;
-      padding: 20px;
-      opacity: 0;
-      pointer-events: none;
-      transform: translateX(0);
-      transition: opacity 0.4s, transform 0.4s;
+      padding: 1rem;
+      border-bottom: 1px solid #ddd;
+      position: fixed;
+      width: 100%;
       background: #fff;
+      z-index: 1000;
+    }
+
+    #navLeft {
+      font-weight: bold;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+    }
+
+    #navRight {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    button, .nav-btn {
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid #000;
+      background: #fff;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    button:hover, .nav-btn:hover {
+      background: #000;
+      color: #fff;
+    }
+
+    /* Container for pages */
+    .page {
+      display: none;
+      padding: 5rem 1rem 1rem;
+      max-width: 600px;
+      margin: 0 auto;
+      transition: opacity 0.3s ease;
     }
     .page.active {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translateX(0);
+      display: block;
     }
-    .page-content {
-      margin-top: 80px;
-      width: 100%;
-      max-width: 400px;
+
+    /* Headings and layout for each page */
+    h2 {
+      margin-bottom: 1rem;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    input, select {
+      padding: 0.5rem;
+      border: 1px solid #999;
+      border-radius: 0.3rem;
+    }
+
+    .action-btn {
+      border: 1px solid #000;
+      background: #fff;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      max-width: 200px;
       text-align: center;
     }
-    .court-lines {
-      position: absolute;
-      top: 0;
-      left: 50%;
-      width: 300px;
-      height: 300px;
-      transform: translateX(-50%);
-      opacity: 0.06;
-      background: radial-gradient(circle at center, #000 20%, transparent 20%),
-                  radial-gradient(circle at center, #000 20%, transparent 20%);
-      background-size: 150px 150px;
-      background-position: 0 0, 75px 75px;
-      pointer-events: none;
-    }
-    label {
-      display: block;
-      margin-bottom: 6px;
-      font-weight: 500;
-      text-align: left;
-    }
-    input[type="text"],
-    input[type="password"],
-    input[type="number"] {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 16px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 1rem;
-      outline: 0;
-    }
-    select {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 16px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 1rem;
-      outline: 0;
-    }
-    .form-section {
-      text-align: left;
-      margin: 20px 0;
-    }
-    .alert {
-      color: red;
-      font-size: 0.9rem;
-      margin-top: 10px;
-    }
-    ol {
-      padding-left: 40px;
-      text-align: left;
-      margin: 20px auto;
+
+    .action-btn:hover {
+      background: #000;
+      color: #fff;
     }
 
-    /* Add top-right nav container for login/signup */
-    .top-right-nav {
-      position: absolute;
-      top: 10px;
-      right: 20px;
-      z-index: 999; /* ensure buttons are visible above everything else */
+    /* Minimal styling for the leaderboard table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
     }
+    th, td {
+      padding: 0.5rem;
+      text-align: left;
+      border-bottom: 1px solid #ccc;
+    }
+
+    /* Extra spacing to avoid content behind fixed nav */
+    #mainContent {
+      padding-top: 4.5rem;
+    }
+
   </style>
-
-  <!-- Load Supabase (UMD) so window.supabase is defined -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-
-  <!-- Our app code -->
-  <script>
-    // 1) Declare global variables FIRST
-    let currentPage = "homePage";  // default page
-
-    // 2) Create Supabase client using the global "supabase"
-    const SUPABASE_URL = "https://ewsovztnigqhmuxptcih.supabase.co";
-    const SUPABASE_ANON_KEY =
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3c292enRuaWdxaG11eHB0Y2loIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NzkwNzMsImV4cCI6MjA1OTQ1NTA3M30.-O95N99gXxNZfaA1KH1_3wplHbQzffpvC1h4z1jw0-8";
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // We'll store the currently "logged in" user's username & city after login.
-    let currentUser = null;
-    let currentUserCity = null;
-
-    // 3) Functions that reference currentPage or supabaseClient
-    async function navigateToPage(target) {
-      document.getElementById(currentPage).classList.remove("active");
-      document.getElementById(target).classList.add("active");
-      currentPage = target;
-    }
-
-    // SIGN UP (username / password / city)
-    async function signUpUser() {
-      const signupUsername = document.getElementById("signupUsername").value.trim();
-      const signupPassword = document.getElementById("signupPassword").value.trim();
-      const signupCity = document.getElementById("signupCity").value.trim();
-      const signupError = document.getElementById("signupError");
-
-      signupError.textContent = "";
-      if (!signupUsername || !signupPassword) {
-        signupError.textContent = "Please provide a username and password.";
-        return;
-      }
-
-      try {
-        // Check if username already exists in "users" table
-        const { data: existingUser } = await supabaseClient
-          .from("users")
-          .select("*")
-          .eq("username", signupUsername)
-          .maybeSingle();
-
-        if (existingUser) {
-          signupError.textContent = "Username already taken.";
-          return;
-        }
-
-        // Insert user into "users" table (demo only - password is stored in plain text!)
-        const { error: insertUserError } = await supabaseClient
-          .from("users")
-          .insert([
-            { 
-              username: signupUsername,
-              password: signupPassword,
-              city: signupCity
-            }
-          ]);
-
-        if (insertUserError) {
-          signupError.textContent = "Error creating user account.";
-          return;
-        }
-
-        // Also insert a row in monthly_rankings for this new user/city
-        if (signupCity) {
-          await supabaseClient.from("monthly_rankings").insert([
-            { username: signupUsername, city: signupCity }
-          ]);
-        }
-
-        // On success, consider this user "logged in"
-        currentUser = signupUsername;
-        currentUserCity = signupCity;
-
-        alert("Signed up successfully!");
-        navigateToPage("homePage");
-      } catch (e) {
-        signupError.textContent = "An error occurred during sign up.";
-      }
-    }
-
-    // LOGIN (check username/password in "users" table)
-    async function loginUser() {
-      const loginUsername = document.getElementById("loginUsername").value.trim();
-      const loginPassword = document.getElementById("loginPassword").value.trim();
-      const loginError = document.getElementById("loginError");
-
-      loginError.textContent = "";
-      if (!loginUsername || !loginPassword) {
-        loginError.textContent = "Please provide username and password.";
-        return;
-      }
-
-      try {
-        // Query "users" table for that username
-        const { data: userRow, error } = await supabaseClient
-          .from("users")
-          .select("*")
-          .eq("username", loginUsername)
-          .maybeSingle();
-
-        if (error) {
-          loginError.textContent = "Error logging in.";
-          return;
-        }
-        // If user not found or password mismatch
-        if (!userRow || userRow.password !== loginPassword) {
-          loginError.textContent = "Invalid username or password.";
-          return;
-        }
-
-        // On success, set "logged in" user
-        currentUser = userRow.username;
-        currentUserCity = userRow.city || null;
-
-        alert("Logged in successfully!");
-        navigateToPage("homePage");
-      } catch (e) {
-        loginError.textContent = "An error occurred during login.";
-      }
-    }
-
-    // CHECK RANK
-    async function checkRank() {
-      const username = document.getElementById("usernameRank").value.trim();
-      const rankDisplay = document.getElementById("rankDisplay");
-      const rankError = document.getElementById("rankError");
-      rankError.textContent = "";
-
-      if (!username) {
-        rankError.textContent = "Please enter your username.";
-        return;
-      }
-
-      try {
-        const { data, error } = await supabaseClient
-          .from("monthly_rankings")
-          .select("ranking, city")
-          .eq("username", username)
-          .maybeSingle();
-
-        if (error) {
-          rankError.textContent = "Error fetching rank.";
-          return;
-        }
-        if (!data) {
-          rankDisplay.textContent = "No rank found.";
-          return;
-        }
-        rankDisplay.textContent =
-          "#" + data.ranking + (data.city ? " in " + data.city : "");
-      } catch (e) {
-        rankError.textContent = "Error fetching rank.";
-      }
-    }
-
-    // ENTER GAME
-    async function enterGame() {
-      const code = document.getElementById("gameCodeInput").value.trim();
-      const err = document.getElementById("enterGameError");
-      err.textContent = "";
-
-      if (!code) {
-        err.textContent = "Please enter a game code.";
-        return;
-      }
-
-      if (!currentUser) {
-        err.textContent = "You need to be logged in to join a game.";
-        return;
-      }
-
-      try {
-        const { data, error } = await supabaseClient
-          .from("games")
-          .select("id")
-          .eq("game_code", code)
-          .maybeSingle();
-
-        if (error) {
-          err.textContent = "Error searching for game.";
-          return;
-        }
-        if (!data) {
-          err.textContent = "Game not found.";
-          return;
-        }
-
-        // Insert user into 'game_players' table
-        await supabaseClient.from("game_players").insert([
-          { game_id: data.id, user_name: currentUser }
-        ]);
-
-        navigateToPage("homePage");
-      } catch (e) {
-        err.textContent = "Could not join game.";
-      }
-    }
-
-    // CREATE GAME
-    async function createGame() {
-      const type = document.getElementById("gameType").value;
-      const res = document.getElementById("createGameResult");
-      res.textContent = "";
-
-      if (!currentUser) {
-        res.textContent = "You must be logged in to create a game.";
-        return;
-      }
-
-      try {
-        // Generate a random code
-        const randomCode = Math.random().toString(36).slice(2, 8).toUpperCase();
-
-        const { data, error } = await supabaseClient
-          .from("games")
-          .insert([
-            {
-              game_code: randomCode,
-              max_players: parseInt(type),
-              created_by: currentUser
-            }
-          ])
-          .select("game_code")
-          .single();
-
-        if (error) {
-          res.textContent = "Error creating game.";
-          return;
-        }
-
-        res.textContent = "Game created. Code: " + data.game_code;
-      } catch (e) {
-        res.textContent = "Error creating game.";
-      }
-    }
-  </script>
 </head>
-
 <body>
-  <div class="container">
-    <div class="court-lines"></div>
-
-    <!-- TOP-RIGHT NAV for login/signup -->
-    <div class="top-right-nav">
-      <button class="action-button" onclick="navigateToPage('loginPage')">Login</button>
-      <button class="action-button" onclick="navigateToPage('signupPage')">Sign Up</button>
+  <!-- Fixed Navigation Bar -->
+  <div id="navBar">
+    <div id="navLeft" onclick="showPage('homePage')">
+      <!-- Simple icon or text for "Court" brand -->
+      <span>🏀 Court</span>
     </div>
+    <div id="navRight">
+      <button class="nav-btn" onclick="showPage('loginPage')">Login</button>
+      <button class="nav-btn" onclick="showPage('signUpPage')">Sign Up</button>
+    </div>
+  </div>
 
+  <div id="mainContent">
     <!-- HOME PAGE -->
     <div id="homePage" class="page active">
-      <img
-        src="https://i.ibb.co/VY7wFGTd/Chat-GPT-Image-Apr-5-2025-03-04-00-PM.png"
-        alt="Basketball Icon"
-        class="basketball-icon"
-      />
-      <h1>Court</h1>
-      <button class="main-button" onclick="navigateToPage('checkRankPage')">Check Rank</button>
-      <button class="main-button" onclick="navigateToPage('enterGamePage')">Enter Game</button>
-      <button class="main-button" onclick="navigateToPage('leaderboardPage')">Leaderboard</button>
-      <button class="main-button" onclick="navigateToPage('createGamePage')">Create Game</button>
+      <h2>Welcome to Court</h2>
+      <p>Organize real-life basketball games with ease.</p>
+      <div style="margin-top: 2rem;">
+        <button class="action-btn" onclick="showPage('checkRankPage')">Check Rank</button>
+        <button class="action-btn" onclick="showPage('enterGamePage')">Enter Game</button>
+        <button class="action-btn" onclick="showPage('createGamePage')">Create Game</button>
+        <button class="action-btn" onclick="showPage('leaderboardPage')">Leaderboard</button>
+      </div>
     </div>
 
     <!-- LOGIN PAGE -->
     <div id="loginPage" class="page">
-      <div class="page-content">
-        <h2>Login</h2>
-        <div class="form-section">
-          <label for="loginUsername">Username</label>
-          <input type="text" id="loginUsername" placeholder="Username" />
-          <label for="loginPassword">Password</label>
-          <input type="password" id="loginPassword" placeholder="Password" />
-          <button class="action-button" onclick="loginUser()">Login</button>
-          <div id="loginError" class="alert"></div>
-        </div>
-        <button class="back-button" onclick="navigateToPage('homePage')">Back</button>
-      </div>
+      <h2>Login</h2>
+      <form onsubmit="handleLogin(event)">
+        <input type="text" id="loginUsername" placeholder="Username" required />
+        <input type="password" id="loginPassword" placeholder="Password" required />
+        <button type="submit" class="action-btn">Login</button>
+      </form>
     </div>
 
-    <!-- SIGN UP PAGE -->
-    <div id="signupPage" class="page">
-      <div class="page-content">
-        <h2>Sign Up</h2>
-        <div class="form-section">
-          <label for="signupUsername">Username</label>
-          <input type="text" id="signupUsername" placeholder="Username" />
-          <label for="signupPassword">Password</label>
-          <input type="password" id="signupPassword" placeholder="Password" />
-          <label for="signupCity">City (optional)</label>
-          <input type="text" id="signupCity" placeholder="City" />
-          <button class="action-button" onclick="signUpUser()">Sign Up</button>
-          <div id="signupError" class="alert"></div>
-        </div>
-        <button class="back-button" onclick="navigateToPage('homePage')">Back</button>
-      </div>
+    <!-- SIGN UP PAGE (Username, Password, City, State) -->
+    <div id="signUpPage" class="page">
+      <h2>Sign Up</h2>
+      <form onsubmit="handleSignUp(event)">
+        <input type="text" id="signUpUsername" placeholder="Username" required />
+        <input type="password" id="signUpPassword" placeholder="Password" required />
+
+        <!-- City and state (USA only) -->
+        <input type="text" id="signUpCity" placeholder="City" required />
+        <select id="signUpState" required>
+          <option value="">Select State</option>
+          <option value="AL">Alabama</option>
+          <option value="AK">Alaska</option>
+          <option value="AZ">Arizona</option>
+          <option value="AR">Arkansas</option>
+          <option value="CA">California</option>
+          <option value="CO">Colorado</option>
+          <option value="CT">Connecticut</option>
+          <option value="DE">Delaware</option>
+          <option value="FL">Florida</option>
+          <option value="GA">Georgia</option>
+          <option value="HI">Hawaii</option>
+          <option value="ID">Idaho</option>
+          <option value="IL">Illinois</option>
+          <option value="IN">Indiana</option>
+          <option value="IA">Iowa</option>
+          <option value="KS">Kansas</option>
+          <option value="KY">Kentucky</option>
+          <option value="LA">Louisiana</option>
+          <option value="ME">Maine</option>
+          <option value="MD">Maryland</option>
+          <option value="MA">Massachusetts</option>
+          <option value="MI">Michigan</option>
+          <option value="MN">Minnesota</option>
+          <option value="MS">Mississippi</option>
+          <option value="MO">Missouri</option>
+          <option value="MT">Montana</option>
+          <option value="NE">Nebraska</option>
+          <option value="NV">Nevada</option>
+          <option value="NH">New Hampshire</option>
+          <option value="NJ">New Jersey</option>
+          <option value="NM">New Mexico</option>
+          <option value="NY">New York</option>
+          <option value="NC">North Carolina</option>
+          <option value="ND">North Dakota</option>
+          <option value="OH">Ohio</option>
+          <option value="OK">Oklahoma</option>
+          <option value="OR">Oregon</option>
+          <option value="PA">Pennsylvania</option>
+          <option value="RI">Rhode Island</option>
+          <option value="SC">South Carolina</option>
+          <option value="SD">South Dakota</option>
+          <option value="TN">Tennessee</option>
+          <option value="TX">Texas</option>
+          <option value="UT">Utah</option>
+          <option value="VT">Vermont</option>
+          <option value="VA">Virginia</option>
+          <option value="WA">Washington</option>
+          <option value="WV">West Virginia</option>
+          <option value="WI">Wisconsin</option>
+          <option value="WY">Wyoming</option>
+        </select>
+        <button type="submit" class="action-btn">Sign Up</button>
+      </form>
     </div>
 
     <!-- CHECK RANK PAGE -->
     <div id="checkRankPage" class="page">
-      <div class="page-content">
-        <h2>Your Rank</h2>
-        <p id="rankDisplay">#??</p>
-        <div class="form-section">
-          <label for="usernameRank">Username</label>
-          <input type="text" id="usernameRank" placeholder="Enter username" />
-          <button class="action-button" onclick="checkRank()">Check My Rank</button>
-          <div id="rankError" class="alert"></div>
-        </div>
-        <button class="back-button" onclick="navigateToPage('homePage')">Back</button>
-      </div>
+      <h2>Check Rank</h2>
+      <form onsubmit="handleCheckRank(event)">
+        <input type="text" id="checkRankUsername" placeholder="Enter Username" required />
+        <button type="submit" class="action-btn">Check Rank</button>
+      </form>
+      <div id="rankResult" style="margin-top:1rem;"></div>
     </div>
 
     <!-- ENTER GAME PAGE -->
     <div id="enterGamePage" class="page">
-      <div class="page-content">
-        <h2>Enter Game</h2>
-        <div class="form-section">
-          <label for="gameCodeInput">Game Code</label>
-          <input type="text" id="gameCodeInput" placeholder="XYZ123" />
-          <button class="action-button" onclick="enterGame()">Join</button>
-          <div id="enterGameError" class="alert"></div>
-        </div>
-        <button class="back-button" onclick="navigateToPage('homePage')">Back</button>
-      </div>
-    </div>
-
-    <!-- LEADERBOARD PAGE -->
-    <div id="leaderboardPage" class="page">
-      <div class="page-content">
-        <h2>Leaderboard</h2>
-        <ol id="leaderboardList"></ol>
-        <button class="back-button" onclick="navigateToPage('homePage')">Back</button>
-      </div>
+      <h2>Enter Game</h2>
+      <form onsubmit="handleEnterGame(event)">
+        <input type="text" id="enterGameCode" placeholder="Enter Game Code" required />
+        <button type="submit" class="action-btn">Enter</button>
+      </form>
+      <div id="enterGameResult" style="margin-top:1rem;"></div>
     </div>
 
     <!-- CREATE GAME PAGE -->
     <div id="createGamePage" class="page">
-      <div class="page-content">
-        <h2>Create Game</h2>
-        <div class="form-section">
-          <label for="gameType">Match Type</label>
-          <select id="gameType">
-            <option value="4">2 vs 2</option>
-            <option value="6">3 vs 3</option>
-            <option value="2">1 vs 1</option>
-          </select>
-          <button class="action-button" onclick="createGame()">Generate Code</button>
-          <div id="createGameResult" class="alert"></div>
-        </div>
-        <button class="back-button" onclick="navigateToPage('homePage')">Back</button>
-      </div>
+      <h2>Create Game</h2>
+      <form onsubmit="handleCreateGame(event)">
+        <select id="createGameType" required>
+          <option value="">Select Game Type</option>
+          <option value="1v1">1v1</option>
+          <option value="2v2">2v2</option>
+          <option value="3v3">3v3</option>
+          <option value="4v4">4v4</option>
+          <option value="5v5">5v5</option>
+        </select>
+        <button type="submit" class="action-btn">Create</button>
+      </form>
+      <div id="createGameResult" style="margin-top:1rem;"></div>
+    </div>
+
+    <!-- LEADERBOARD PAGE -->
+    <div id="leaderboardPage" class="page">
+      <h2>Leaderboard</h2>
+      <p>Below is a simple listing by city, state, and overall rank. (Mock example)</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>City</th>
+            <th>State</th>
+            <th>Rank</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboardTable">
+          <!-- Filled by JavaScript or your dynamic data -->
+        </tbody>
+      </table>
     </div>
   </div>
+
+  <script>
+    // Insert your Supabase credentials here:
+    const SUPABASE_URL = "YOUR_SUPABASE_URL";
+    const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+
+    // Example: const { createClient } = supabase;
+    // const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Page navigation function
+    function showPage(pageId) {
+      const pages = document.querySelectorAll('.page');
+      pages.forEach(page => {
+        page.classList.remove('active');
+      });
+      const currentPage = document.getElementById(pageId);
+      if (currentPage) {
+        currentPage.classList.add('active');
+      }
+      // Scroll to top for a clean transition
+      window.scrollTo(0, 0);
+    }
+
+    // Handle Login
+    function handleLogin(event) {
+      event.preventDefault();
+      const username = document.getElementById('loginUsername').value;
+      const password = document.getElementById('loginPassword').value;
+      // Here you would call supabase.auth.signInWithPassword({ email/username, password })
+      // For demonstration, just alert:
+      alert("Login attempt for " + username);
+    }
+
+    // Handle Sign Up
+    function handleSignUp(event) {
+      event.preventDefault();
+      const username = document.getElementById('signUpUsername').value;
+      const password = document.getElementById('signUpPassword').value;
+      const city = document.getElementById('signUpCity').value;
+      const state = document.getElementById('signUpState').value;
+      // Here you would call supabase.auth.signUp(...) and then insert into profiles
+      alert("Sign up attempt for " + username + " (" + city + ", " + state + ")");
+    }
+
+    // Check Rank
+    function handleCheckRank(event) {
+      event.preventDefault();
+      const username = document.getElementById('checkRankUsername').value;
+      // Example fetch from "profiles" table using supabase:
+      // let { data: profile, error } = await supabase.from('profiles').select('*').eq('username', username).single();
+      const rankResult = document.getElementById('rankResult');
+      // Placeholder:
+      rankResult.innerText = "Rank for " + username + " is: [Mock Rank]";
+    }
+
+    // Enter Game
+    function handleEnterGame(event) {
+      event.preventDefault();
+      const gameCode = document.getElementById('enterGameCode').value;
+      const resultDiv = document.getElementById('enterGameResult');
+      // You would look up the game in your "games" table, and insert into "player_in_game"
+      resultDiv.innerText = "Entered game: " + gameCode + " (Placeholder)";
+    }
+
+    // Create Game
+    function handleCreateGame(event) {
+      event.preventDefault();
+      const gameType = document.getElementById('createGameType').value;
+      const resultDiv = document.getElementById('createGameResult');
+      // Generate a unique code or let the DB do it, then insert into "games" table
+      const newCode = "GAME-" + Math.floor(100000 + Math.random() * 900000); // placeholder
+      resultDiv.innerText = "Created " + gameType + " game with code: " + newCode;
+    }
+
+    // You could also load the leaderboard from Supabase:
+    //   supabase.from('profiles').select('*').order('rank', { ascending: false })
+    //   Then populate #leaderboardTable with user data.
+
+    // For demonstration, let's add a mock row to the leaderboard
+    const leaderboardTable = document.getElementById('leaderboardTable');
+    const mockRow = document.createElement('tr');
+    mockRow.innerHTML = "<td>MockUser</td><td>Atlanta</td><td>GA</td><td>99</td>";
+    leaderboardTable.appendChild(mockRow);
+  </script>
 </body>
 </html>
