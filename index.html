@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Court App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{height:100%;width:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;background:#fff;color:#000;overflow-x:hidden}
+    .container{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:100vh;padding:20px;position:relative}
+    h1{font-size:2rem;font-weight:600;margin:20px 0 30px}
+    h2{font-size:1.5rem;margin:15px 0}
+    .basketball-icon{width:120px;height:120px;margin-top:40px;margin-bottom:20px}
+    .main-button,.back-button,.action-button{display:inline-block;border:1px solid #000;border-radius:9999px;background:#fff;color:#000;font-size:1rem;font-weight:500;padding:14px 24px;margin:8px;cursor:pointer;transition:transform .1s,box-shadow .15s}
+    .main-button:active,.back-button:active,.action-button:active{transform:scale(.95);box-shadow:0 0 8px rgba(0,0,0,.15)}
+    .main-button:hover,.back-button:hover,.action-button:hover{background:#f2f2f2}
+    .page{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:20px;opacity:0;pointer-events:none;transform:translateX(0);transition:opacity .4s,transform .4s;background:#fff}
+    .page.active{opacity:1;pointer-events:auto;transform:translateX(0)}
+    .page-content{margin-top:80px;width:100%;max-width:400px;text-align:center}
+    .court-lines{position:absolute;top:0;left:50%;width:300px;height:300px;transform:translateX(-50%);opacity:.06;background:radial-gradient(circle at center,#000 20%,transparent 20%),radial-gradient(circle at center,#000 20%,transparent 20%);background-size:150px 150px;background-position:0 0,75px 75px;pointer-events:none}
+    label{display:block;margin-bottom:6px;font-weight:500;text-align:left}
+    input[type=text],input[type=number]{width:100%;padding:10px;margin-bottom:16px;border:1px solid #ccc;border-radius:8px;font-size:1rem;outline:0}
+    select{width:100%;padding:10px;margin-bottom:16px;border:1px solid #ccc;border-radius:8px;font-size:1rem;outline:0}
+    .form-section{text-align:left;margin:20px 0}
+    .alert{color:red;font-size:.9rem;margin-top:10px}
+    ol{padding-left:40px;text-align:left;margin:20px auto}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script>
+    const SUPABASE_URL="https://ewsovztnigqhmuxptcih.supabase.co";
+    const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3c292enRuaWdxaG11eHB0Y2loIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM4NzkwNzMsImV4cCI6MjA1OTQ1NTA3M30.-O95N99gXxNZfaA1KH1_3wplHbQzffpvC1h4z1jw0-8";
+    const supabase=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+    let currentPage="homePage";
+    async function navigateToPage(target){document.getElementById(currentPage).classList.remove("active");document.getElementById(target).classList.add("active");currentPage=target}
+    async function checkRank(){
+      const username=document.getElementById("usernameRank").value.trim();
+      const rankDisplay=document.getElementById("rankDisplay");
+      const rankError=document.getElementById("rankError");
+      rankError.textContent="";
+      if(!username){rankError.textContent="Please enter your username.";return}
+      try{
+        const {data,error}=await supabase.from("monthly_rankings").select("ranking,city").eq("username",username).maybeSingle();
+        if(error){rankError.textContent="Error fetching rank.";return}
+        if(!data){rankDisplay.textContent="No rank found.";return}
+        rankDisplay.textContent="#"+data.ranking+(data.city?" in "+data.city:"")
+      }catch(e){rankError.textContent="Error fetching rank."}
+    }
+    async function enterGame(){
+      const code=document.getElementById("gameCodeInput").value.trim();
+      const err=document.getElementById("enterGameError");
+      err.textContent="";
+      if(!code){err.textContent="Please enter a game code.";return}
+      try{
+        const {data,error}=await supabase.from("games").select("id").eq("game_code",code).maybeSingle();
+        if(error){err.textContent="Error searching for game.";return}
+        if(!data){err.textContent="Game not found.";return}
+        await supabase.from("game_players").insert([{game_id:data.id,user_name:"TestUser"}]);
+        navigateToPage("homePage")
+      }catch(e){err.textContent="Could not join game."}
+    }
+    async function createGame(){
+      const type=document.getElementById("gameType").value;
+      const res=document.getElementById("createGameResult");
+      res.textContent="";
+      try{
+        const randomCode=Math.random().toString(36).slice(2,8).toUpperCase();
+        const {data,error}=await supabase.from("games").insert([{game_code:randomCode,max_players:parseInt(type),created_by:"TestUser"}]).select("game_code").single();
+        if(error){res.textContent="Error creating game.";return}
+        res.textContent="Game created. Code: "+data.game_code
+      }catch(e){res.textContent="Error creating game."}
+    }
+  </script>
+</head>
+<body>
+<div class="container">
+  <div class="court-lines"></div>
+
+  <div id="homePage" class="page active">
+    <img src="basketball_icon.png" alt="Basketball Icon" class="basketball-icon">
+    <h1>Court</h1>
+    <button class="main-button" onclick="navigateToPage('checkRankPage')">Check Rank</button>
+    <button class="main-button" onclick="navigateToPage('enterGamePage')">Enter Game</button>
+    <button class="main-button" onclick="navigateToPage('leaderboardPage')">Leaderboard</button>
+    <button class="main-button" onclick="navigateToPage('createGamePage')">Create Game</button>
+  </div>
+
+  <div id="checkRankPage" class="page">
+    <div class="page-content">
+      <h2>Your Rank</h2>
+      <p id="rankDisplay">#??</p>
+      <div class="form-section">
+        <label for="usernameRank">Username</label>
+        <input type="text" id="usernameRank" placeholder="Enter username">
+        <button class="action-button" onclick="checkRank()">Check My Rank</button>
+        <div id="rankError" class="alert"></div>
+      </div>
+      <button class="back-button" onclick="navigateToPage('homePage')">Back</button>
+    </div>
+  </div>
+
+  <div id="enterGamePage" class="page">
+    <div class="page-content">
+      <h2>Enter Game</h2>
+      <div class="form-section">
+        <label for="gameCodeInput">Game Code</label>
+        <input type="text" id="gameCodeInput" placeholder="XYZ123">
+        <button class="action-button" onclick="enterGame()">Join</button>
+        <div id="enterGameError" class="alert"></div>
+      </div>
+      <button class="back-button" onclick="navigateToPage('homePage')">Back</button>
+    </div>
+  </div>
+
+  <div id="leaderboardPage" class="page">
+    <div class="page-content">
+      <h2>Leaderboard</h2>
+      <ol id="leaderboardList"></ol>
+      <button class="back-button" onclick="navigateToPage('homePage')">Back</button>
+    </div>
+  </div>
+
+  <div id="createGamePage" class="page">
+    <div class="page-content">
+      <h2>Create Game</h2>
+      <div class="form-section">
+        <label for="gameType">Match Type</label>
+        <select id="gameType">
+          <option value="4">2 vs 2</option>
+          <option value="6">3 vs 3</option>
+          <option value="2">1 vs 1</option>
+        </select>
+        <button class="action-button" onclick="createGame()">Generate Code</button>
+        <div id="createGameResult" class="alert"></div>
+      </div>
+      <button class="back-button" onclick="navigateToPage('homePage')">Back</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
